@@ -1,3 +1,7 @@
+/**
+ * @typedef {import('@types/chrome')}
+ */
+
 // Background script (service worker) for coordinating screenshot captures
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message.action === 'startScreenshots') {
@@ -36,7 +40,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				const imageData = await captureFullPage(tabId);
 				// Save the captured image data as a file in Downloads
 				const filename = `screenshot-${size.name}.png`;
-				chrome.downloads.download({ url: imageData, filename: filename, saveAs: false });
+				chrome.downloads.download({ url: imageData, filename, saveAs: false });
 			}
 			// Restore the original window size
 			await chrome.windows.update(windowId, { width: originalWidth, height: originalHeight });
