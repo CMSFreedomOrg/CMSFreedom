@@ -1,0 +1,26 @@
+{
+	"manifest_version": 3,
+	"name": "Responsive Full Page Screenshot",
+	"description": "Captures full-page screenshots at mobile, tablet, and desktop sizes.",
+	"version": "1.0",
+	"permissions": [
+	  "activeTab",
+	  "tabs",
+	  "scripting",
+	  "downloads"
+	],
+	"action": {
+	  "default_popup": "popup.html",
+	  "default_title": "Capture Screens"
+	},
+	"background": {
+	  "service_worker": "background.js"
+	},
+	"content_scripts": [
+	  {
+		"matches": ["<all_urls>"],
+		"js": ["contentScript.js"]
+	  }
+	]
+  }
+  
