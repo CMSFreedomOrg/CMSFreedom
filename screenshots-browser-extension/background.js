@@ -8,7 +8,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 		// Store the target tab ID
 		targetTabId = message.tabId;
 		const dims = await sendMessageToTab(targetTabId, { action: 'GET_DIMENSIONS' });
-		const SIZES = [dims.totalWidth, 1024, 400];
+		const SIZES = [parseInt(dims.totalWidth + 15), 1024, 400];
 
 		try {
 			// We'll capture a full-page screenshot for each size in SIZES.
@@ -21,6 +21,10 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 					await wait(1000);
 				}
 			}
+			// If all screenshots are done, resize the window back to the original width
+			const tab = await chrome.tabs.get(targetTabId);
+			const currentWindow = await chrome.windows.get(tab.windowId);
+			await chrome.windows.update(currentWindow.id, { width: SIZES[0] });
 			sendResponse({ status: 'done' });
 			// Reset target tab ID after completion
 			targetTabId = null;
