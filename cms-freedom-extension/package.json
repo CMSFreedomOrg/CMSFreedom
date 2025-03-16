@@ -1,0 +1,12 @@
+{
+  "name": "cms-freedom-extension",
+  "version": "1.0.0",
+  "description": "Browser extension for migrating websites",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.254",
+    "eslint": "^8.56.0"
+  }
+} 
