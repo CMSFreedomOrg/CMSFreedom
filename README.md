@@ -22,11 +22,11 @@ graph TD
     UserNavigatesWebsite[User Navigates to Website] --> UserClicksConversionButton{User Clicks Conversion Button};
     UserClicksConversionButton --> ShowLoadingButton[Show Loading Button];
     ShowLoadingButton --> CaptureVisualsAndProcessHTML{Capture Visuals and Process HTML};
-    CaptureVisualsAndProcessHTML --> LaunchWordPressPlayground[Launch WordPress Playground Instance];
+    CaptureVisualsAndProcessHTML --> CapturePageScreenshots[Take Multiple Screenshots];
+    CapturePageScreenshots --> LaunchWordPressPlayground[Launch WordPress Playground Instance];
     LaunchWordPressPlayground --> FetchPageHTML[Fetch HTML of Page];
     FetchPageHTML --> PreprocessHTMLForLLM["Preprocess HTML for LLM (Plugin)"];
-    PreprocessHTMLForLLM --> CapturePageScreenshots[Take Multiple Screenshots];
-    CapturePageScreenshots --> SendDataToLLM[Send Screenshots and Preprocessed HTML to LLM];
+    PreprocessHTMLForLLM --> SendDataToLLM[Send Screenshots and Preprocessed HTML to LLM];
     SendDataToLLM --> ReceiveLLMPageStructure[Receive Page Structure from LLM];
     ReceiveLLMPageStructure --> PostprocessLLMResponse["Postprocess LLM Response to JSON (Plugin)"];
     PostprocessLLMResponse --> QueryLLMForGeneratingBlock[Generate WordPress Block Theme with LLM];
