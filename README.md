@@ -19,31 +19,34 @@ The WordPress plugin within the playground instance will then postprocess the re
 # Process Chart
 ```mermaid
 graph TD
-    UserNavigatesWebsite[User Navigates to Website] --> UserClicksConversionButton[User Clicks Conversion Button];
+    UserNavigatesWebsite[User Navigates to Website] --> CheckExtensionButtonVisibility{Chrome Extension Button Visible?};
+    CheckExtensionButtonVisibility -- Yes --> UserClicksConversionButton[User Clicks Conversion Button];
+    CheckExtensionButtonVisibility -- No --> UserNavigatesWebsite;
     UserClicksConversionButton --> ShowLoadingButton[Show Loading Button];
     ShowLoadingButton --> CaptureVisualsAndProcessHTML{Capture Visuals and Process HTML};
-    CaptureVisualsAndProcessHTML --> CapturePageScreenshots[Take Multiple Screenshots];
-    CapturePageScreenshots --> LaunchWordPressPlayground[Launch WordPress Playground Instance];
+    CaptureVisualsAndProcessHTML --> LaunchWordPressPlayground[Launch WordPress Playground Instance];
     LaunchWordPressPlayground --> FetchPageHTML[Fetch HTML of Page];
     FetchPageHTML --> PreprocessHTMLForLLM["Preprocess HTML for LLM (Plugin)"];
-    PreprocessHTMLForLLM --> SendDataToLLM[Send Screenshots and Preprocessed HTML to LLM];
+    PreprocessHTMLForLLM --> CapturePageScreenshots[Take Multiple Screenshots];
+    CapturePageScreenshots --> SendDataToLLM[Send Screenshots and Preprocessed HTML to LLM];
     SendDataToLLM --> ReceiveLLMPageStructure[Receive Page Structure from LLM];
     ReceiveLLMPageStructure --> PostprocessLLMResponse["Postprocess LLM Response to JSON (Plugin)"];
-    PostprocessLLMResponse --> GenerateWordPressSite[Generate WordPress Website];
-    GenerateWordPressSite --> OpenNewTabWithWordPress[Open New Tab with WordPress Website];
+    PostprocessLLMResponse --> QueryLLMForGeneratingBlock[Generate WordPress Block Theme with LLM];
+    QueryLLMForGeneratingBlock --> GenerateThemeFiles["Generate theme files on WordPress Website (Playground)"];
+    GenerateThemeFiles --> OpenNewTabWithWordPress[Open New Tab with WordPress Website];
     OpenNewTabWithWordPress --> HideLoadingButton[Hide Loading Button];
     HideLoadingButton --> ProcessComplete[End];
 
-    subgraph Technical Details
+    subgraph TechnicalDetails
         LaunchWordPressPlayground;
         FetchPageHTML;
         PreprocessHTMLForLLM;
         CapturePageScreenshots;
         SendDataToLLM;
+        QueryLLMForGeneratingBlock;
+        GenerateThemeFiles;
         ReceiveLLMPageStructure;
         PostprocessLLMResponse;
-        GenerateWordPressSite;
     end
-
 ```
 
