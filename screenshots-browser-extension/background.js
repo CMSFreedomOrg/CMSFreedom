@@ -15,7 +15,15 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 			for (let i = 0; i < SIZES.length; i++) {
 				// Make sure the target tab is active before capturing
 				await activateTab(targetTabId);
-				await captureFullPage(targetTabId, SIZES[i]);
+				await captureFullPage(targetTabId, SIZES[i], (currentY, totalY) => {
+					chrome.runtime.sendMessage({
+						type: 'PROGRESS_UPDATE',
+						currentScreenshot: i + 1,
+						totalScreenshots: SIZES.length,
+						currentY,
+						totalY
+					});
+				});
 				// Wait between different sizes to avoid overwhelming the browser
 				if (i < SIZES.length - 1) {
 					await wait(1000);
@@ -167,7 +175,7 @@ async function ensureContentScriptInjected(tabId) {
 	}
 }
 
-async function captureFullPage(tabId, width) {
+async function captureFullPage(tabId, width, onProgress) {
 	try {
 		// Make sure the target tab is active
 		await activateTab(tabId);
@@ -272,11 +280,7 @@ async function captureFullPage(tabId, width) {
 			}
 
 			// Send progress
-			chrome.runtime.sendMessage({
-				type: 'PROGRESS_UPDATE',
-				completed: step + 1,
-				total: Math.ceil(maxScrollHeight / scrollIncrement),
-			});
+			onProgress(lastScrollY + height, dims.totalHeight);
 
 			if (step === 0) {
 				// Hide any elements that stick around on scrolling. We don't
@@ -342,7 +346,20 @@ async function sendMessageToTab(tabId, message, silent = false) {
 		});
 
 		if (!pingResponse || !pingResponse.ready) {
-			throw new Error('Content script not ready');
+			// Try for up to 5 seconds to get a response from the content script
+			const startTime = Date.now();
+			while (Date.now() - startTime < 5000) {
+				await wait(200);
+				const retryResponse = await new Promise(resolve => {
+					chrome.tabs.sendMessage(tabId, { action: 'PING' }, response => {
+						resolve(response);
+					});
+				});
+				if (retryResponse && retryResponse.ready) {
+					return retryResponse;
+				}
+			}
+			throw new Error('Content script not ready after 5 seconds');
 		}
 
 		// Send the actual message
