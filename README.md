@@ -15,5 +15,3 @@ The browser extension will then take multiple screenshots of the webpage, and op
 Once complete, the browser extension will send the screenshots and preproccesed HTML to the LLM to identify the structure of the page.  
 
 The WordPress plugin within the playground instance will then postprocess the response from the LLM and create the strucutre in standard JSON format.
-
-
