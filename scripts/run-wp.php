@@ -54,6 +54,10 @@ function crawl( &$seen_urls, &$url_queue ) {
 
 		case 'list-view':
 			$urls = run_llm( $html, 'single-view-links' );
+			$pagination = run_llm( $html, 'next-prev-pagination' );
+			if ( ! isset( $seen_urls[ $pagination ] ) ) {
+				$url_queue[] = $pagination;
+			}
 			foreach ( $urls as $url ) {
 				if ( ! isset( $seen_urls[ $url ] ) {
 					$url_queue[] = $url;
