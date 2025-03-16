@@ -1,17 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Screenshot Extension</title>
-  <style>
-    body { font-family: sans-serif; margin: 0; padding: 10px; width: 200px; }
-    button { width: 100%; padding: 8px; font-size: 14px; }
-    #status { margin-top: 8px; font-size: 0.9em; color: green; }
-  </style>
+	<meta charset="UTF-8">
+	<title>Screenshot Popup</title>
+	<style>
+		body {
+			background: #efefe8;
+			color: #212121;
+			font-size: 1rem;
+			padding: 0.5rem;
+		}
+
+		#contentContainer {
+			min-width: 300px;
+			text-align: center;
+		}
+
+		header {
+			display: flex;
+			gap: 1rem;
+		}
+
+		h1 {
+			font-size: 1.5rem;
+		}
+
+		button {
+			border: 0;
+			background: #A6DEF8;
+			color: #212121;
+			padding: 10px 15px;
+			font-size: 1rem;
+			cursor: pointer;
+		}
+
+		#currentState {
+			font-size: 0.75rem;
+			text-align: left;
+			display: none;
+		}
+
+		#progressContainer {
+			width: 100%;
+			height: 10px;
+			margin-top: 10px;
+			border: 1px solid #ccc;
+		}
+		#progressBar {
+			height: 10px;
+			width: 0%;
+			background: #4caf50;
+		}
+		#statusMessage {
+			margin-top: 10px;
+		}
+	</style>
 </head>
 <body>
-  <button id="captureBtn">Capture Screenshots</button>
-  <div id="status"></div>
-  <script src="popup.js"></script>
+<div id="contentContainer">
+	<header>
+		<img src="CMSFreedom-logo-square.png" alt="CMS Freedom" width="100px">
+		<h1>CMS Freedom</h1>
+	</header>
+
+	<p>Migrate this website to a WordPress Playground instance.</p>
+
+	<button id="captureBtn">Start migration</button>
+
+	<div id="currentState">
+		<p><strong>Progress...</strong></p>
+		<div id="progressContainer">
+			<div id="progressBar"></div>
+		</div>
+		<div id="statusMessage"></div>
+	</div>
+</div>
+<script type="module" src="./popup.js"></script>
 </body>
 </html>

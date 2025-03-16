@@ -7,32 +7,20 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 	if (message.type === 'START_CAPTURE') {
 		// Store the target tab ID
 		targetTabId = message.tabId;
-		const dims = await sendMessageToTab(targetTabId, { action: 'GET_DIMENSIONS' });
-		const SIZES = [parseInt(dims.totalWidth + 15), 1024, 400];
+		// const SIZES = [375, 768, 1024];
+		const SIZES = [1024]; // Only use the largest size for testing
 
 		try {
 			// We'll capture a full-page screenshot for each size in SIZES.
 			for (let i = 0; i < SIZES.length; i++) {
 				// Make sure the target tab is active before capturing
 				await activateTab(targetTabId);
-				await captureFullPage(targetTabId, SIZES[i], (currentY, totalY) => {
-					chrome.runtime.sendMessage({
-						type: 'PROGRESS_UPDATE',
-						currentScreenshot: i + 1,
-						totalScreenshots: SIZES.length,
-						currentY,
-						totalY
-					});
-				});
+				await captureFullPage(targetTabId, SIZES[i]);
 				// Wait between different sizes to avoid overwhelming the browser
 				if (i < SIZES.length - 1) {
 					await wait(1000);
 				}
 			}
-			// If all screenshots are done, resize the window back to the original width
-			const tab = await chrome.tabs.get(targetTabId);
-			const currentWindow = await chrome.windows.get(tab.windowId);
-			await chrome.windows.update(currentWindow.id, { width: SIZES[0] });
 			sendResponse({ status: 'done' });
 			// Reset target tab ID after completion
 			targetTabId = null;
@@ -67,18 +55,8 @@ async function processNextCapture() {
 		await wait(50);
 
 		// Capture the specific tab
-		// Capture the specific tab
-		// Get the window ID from the target tab
-		let windowId = null;
-		try {
-			const tab = await chrome.tabs.get(targetTabId);
-			windowId = tab.windowId;
-		} catch (error) {
-			console.error('Error getting window ID from tab:', error);
-		}
-		console.log({ windowId, targetTabId });
 		const dataUrl = await chrome.tabs.captureVisibleTab(
-			windowId, // Use the original window
+			null, // Use the current window
 			{ format: 'png', quality: 100 }
 		);
 		resolve(dataUrl);
@@ -109,7 +87,6 @@ function captureVisibleTabRateLimited() {
 
 // Helper function to activate a specific tab
 async function activateTab(tabId) {
-	return;
 	try {
 		// Check if the tab still exists
 		const tab = await chrome.tabs.get(tabId);
@@ -118,8 +95,8 @@ async function activateTab(tabId) {
 		}
 
 		// Activate the tab and its window
-		// await chrome.tabs.update(tabId, { active: true });
-		// await chrome.windows.update(tab.windowId, { focused: true });
+		await chrome.tabs.update(tabId, { active: true });
+		await chrome.windows.update(tab.windowId, { focused: true });
 
 		// Wait a moment for the tab to become active
 		await wait(200);
@@ -175,7 +152,7 @@ async function ensureContentScriptInjected(tabId) {
 	}
 }
 
-async function captureFullPage(tabId, width, onProgress) {
+async function captureFullPage(tabId, width) {
 	try {
 		// Make sure the target tab is active
 		await activateTab(tabId);
@@ -207,47 +184,35 @@ async function captureFullPage(tabId, width, onProgress) {
 		const steps = Math.ceil(totalHeight / scrollIncrement);
 		console.log({ steps });
 
-		// Remove the assumption of totalHeight and scroll until the bottom or 20,000 pixels
-		let totalScrolledHeight = 0;
-		const maxScrollHeight = 20000; // Upper bound for scrolling
-
 		// Initialize canvas in content script
 		const canvasInit = await sendMessageToTab(tabId, {
 			action: 'INIT_CANVAS',
-			width: totalWidth * devicePixelRatio,
-			height: maxScrollHeight * devicePixelRatio,
+			width: totalWidth,
+			height: totalHeight,
 		});
 
 		if (!canvasInit || !canvasInit.success) {
 			throw new Error('Failed to initialize canvas');
 		}
 
-		let step = 0;
-		let lastScrollY = null;
-		while (totalScrolledHeight < maxScrollHeight) {
+		for (let step = 0; step < steps; step++) {
 			const scrollY = step * scrollIncrement;
 
 			// Make sure the target tab is still active
 			await activateTab(tabId);
 
 			// Scroll the page and wait for content to stabilize
+			console.log('before SCROLL TO');
 			const scrollResult = await sendMessageToTab(tabId, {
 				action: 'SCROLL_TO',
 				scrollY: scrollY,
 			});
 
+			const actualScrollY = scrollResult.actualScrollY * devicePixelRatio;
 			if (!scrollResult || !scrollResult.success) {
 				console.error('Failed to scroll page');
-				break;
+				continue;
 			}
-
-			const actualScrollY = scrollResult.actualScrollY;
-			if (lastScrollY !== null && lastScrollY === actualScrollY) {
-				// If we didn't move, we've reached the bottom
-				console.log('Reached the bottom');
-				break;
-			}
-			totalScrolledHeight = actualScrollY;
 
 			// Wait a bit after scrolling before capturing
 			await wait(50);
@@ -258,12 +223,12 @@ async function captureFullPage(tabId, width, onProgress) {
 				dataUrl = await captureVisibleTabRateLimited();
 			} catch (error) {
 				console.error('Error capturing tab:', error);
-				break;
+				continue;
 			}
 
 			if (!dataUrl) {
 				console.error('No data URL returned from capture');
-				break;
+				continue;
 			}
 
 			// Draw the captured image onto the canvas in content script
@@ -271,34 +236,34 @@ async function captureFullPage(tabId, width, onProgress) {
 				action: 'DRAW_IMAGE',
 				dataUrl: dataUrl,
 				x: 0,
-				y: actualScrollY * devicePixelRatio,
+				y: actualScrollY,
 			});
 
 			if (!drawResult || !drawResult.success) {
 				console.error('Failed to draw image on canvas');
-				break;
+				continue;
 			}
 
 			// Send progress
-			onProgress(lastScrollY + height, dims.totalHeight);
+			chrome.runtime.sendMessage({
+				type: 'PROGRESS_UPDATE',
+				completed: step + 1,
+				total: steps,
+			});
 
 			if (step === 0) {
 				// Hide any elements that stick around on scrolling. We don't
 				// want them to be visible in every segment of the screenshot.
 				await sendMessageToTab(tabId, {
-					action: 'HIDE_STICKY_ELEMENTS',
+					action: 'HIDE_STICKY_ELEMENTS'
 				});
 			}
 
-			if (scrollResult.reachedTheBottom) {
-				break;
+			// Wait between captures to avoid running
+			// into the chrome security timeout.
+			if (step < steps - 1) {
+				await wait(50);
 			}
-
-			// Wait between captures to avoid running into the chrome security timeout.
-			await wait(50);
-
-			step++;
-			lastScrollY = actualScrollY;
 		}
 
 		// Get the final screenshot from content script
@@ -311,8 +276,13 @@ async function captureFullPage(tabId, width, onProgress) {
 		const timestamp = new Date().toISOString().replace(/:/g, '-');
 		const filename = `screenshot-${width}px-${timestamp}.png`;
 
+		// Use the array buffer directly with chrome.downloads.download
+		// Convert ArrayBuffer to base64 data URL
+		const base64Data = arrayBufferToBase64(finalResult.imageData);
+		const dataUrl = `data:image/png;base64,${base64Data}`;
+
 		await chrome.downloads.download({
-			url: finalResult.imageData,
+			url: dataUrl,
 			filename: filename,
 			saveAs: false,
 		});
@@ -339,32 +309,19 @@ function arrayBufferToBase64(buffer) {
 async function sendMessageToTab(tabId, message, silent = false) {
 	try {
 		// Send a PING message to check readiness
-		const pingResponse = await new Promise(resolve => {
-			chrome.tabs.sendMessage(tabId, { action: 'PING' }, response => {
+		const pingResponse = await new Promise((resolve) => {
+			chrome.tabs.sendMessage(tabId, { action: 'PING' }, (response) => {
 				resolve(response);
 			});
 		});
 
 		if (!pingResponse || !pingResponse.ready) {
-			// Try for up to 5 seconds to get a response from the content script
-			const startTime = Date.now();
-			while (Date.now() - startTime < 5000) {
-				await wait(200);
-				const retryResponse = await new Promise(resolve => {
-					chrome.tabs.sendMessage(tabId, { action: 'PING' }, response => {
-						resolve(response);
-					});
-				});
-				if (retryResponse && retryResponse.ready) {
-					return retryResponse;
-				}
-			}
-			throw new Error('Content script not ready after 5 seconds');
+			throw new Error('Content script not ready');
 		}
 
 		// Send the actual message
 		return new Promise((resolve, reject) => {
-			chrome.tabs.sendMessage(tabId, message, response => {
+			chrome.tabs.sendMessage(tabId, message, (response) => {
 				if (chrome.runtime.lastError) {
 					if (!silent) {
 						console.error('Error sending message:', chrome.runtime.lastError);
@@ -382,5 +339,5 @@ async function sendMessageToTab(tabId, message, silent = false) {
 }
 
 function wait(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Migrating Your Site</title>
+  <style>
+    html, body { 
+      margin: 0; 
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    #modalContent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      background-color: rgba(254, 254, 254, 0.95);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #progressContainer {
+      width: 80%;
+      background: #ddd;
+      height: 10px;
+      margin-top: 10px;
+    }
+    #progressBar {
+      height: 10px;
+      width: 0%;
+      background: #4caf50;
+    }
+    #iframeContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+    }
+    #wp-playground {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="modalContent">
+    <h2 id="progress-prompt">Migrating your site...</h2>
+    <div id="progressContainer">
+      <div id="progressBar"></div>
+    </div>
+  </div>
+  <div id="iframeContainer">
+    <iframe id="wp-playground"></iframe>
+    <script type="module" src="migrate.js"></script>
+  </div>
+</body>
+</html> 
