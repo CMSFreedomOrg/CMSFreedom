@@ -187,8 +187,8 @@ async function captureFullPage(tabId, width) {
 		// Initialize canvas in content script
 		const canvasInit = await sendMessageToTab(tabId, {
 			action: 'INIT_CANVAS',
-			width: totalWidth,
-			height: totalHeight,
+			width: totalWidth * devicePixelRatio,
+			height: totalHeight * devicePixelRatio,
 		});
 
 		if (!canvasInit || !canvasInit.success) {
@@ -202,13 +202,13 @@ async function captureFullPage(tabId, width) {
 			await activateTab(tabId);
 
 			// Scroll the page and wait for content to stabilize
-			console.log('before SCROLL TO');
+			console.log('before SCROLL TO', {scrollY, scrollIncrement});
 			const scrollResult = await sendMessageToTab(tabId, {
 				action: 'SCROLL_TO',
 				scrollY: scrollY,
 			});
 
-			const actualScrollY = scrollResult.actualScrollY * devicePixelRatio;
+			const actualScrollY = scrollResult.actualScrollY;
 			if (!scrollResult || !scrollResult.success) {
 				console.error('Failed to scroll page');
 				continue;
@@ -241,7 +241,7 @@ async function captureFullPage(tabId, width) {
 				action: 'DRAW_IMAGE',
 				dataUrl: dataUrl,
 				x: 0,
-				y: actualScrollY,
+				y: actualScrollY * devicePixelRatio,
 			});
 
 			if (!drawResult || !drawResult.success) {

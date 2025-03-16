@@ -172,14 +172,16 @@
 	function getDimensions() {
 		try {
 			const devicePixelRatio = window.devicePixelRatio || 1;
-			const width = window.innerWidth * devicePixelRatio;
-			const height = window.innerHeight * devicePixelRatio;
-			const totalWidth =
-				Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) *
-				devicePixelRatio;
-			const totalHeight =
-				Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) *
-				devicePixelRatio;
+			const width = window.innerWidth;
+			const height = window.innerHeight;
+			const totalWidth = Math.max(
+				document.body.scrollWidth,
+				document.documentElement.scrollWidth
+			);
+			const totalHeight = Math.max(
+				document.body.scrollHeight,
+				document.documentElement.scrollHeight
+			);
 
 			return { width, height, totalWidth, totalHeight, devicePixelRatio };
 		} catch (error) {
@@ -210,22 +212,22 @@
 
 	function hideStickyElements() {
 		const stickyElements = [];
-		
+
 		// Find elements with position: fixed or sticky
 		const allElements = document.querySelectorAll('*');
-		allElements.forEach(element => {
+		allElements.forEach((element) => {
 			const computedStyle = window.getComputedStyle(element);
 			const position = computedStyle.getPropertyValue('position');
-			
+
 			if (position === 'fixed' || position === 'sticky') {
 				// Store original styles before modifying
 				stickyElements.push({
 					element: element,
 					originalPosition: position,
 					originalDisplay: computedStyle.getPropertyValue('display'),
-					originalVisibility: computedStyle.getPropertyValue('visibility')
+					originalVisibility: computedStyle.getPropertyValue('visibility'),
 				});
-				
+
 				// Hide the element
 				element.style.setProperty('display', 'none', 'important');
 				// Alternative approach if needed:
@@ -234,12 +236,12 @@
 				// element.style.setProperty('z-index', '-9999', 'important');
 			}
 		});
-		
+
 		console.log(`Hidden ${stickyElements.length} sticky/fixed elements for screenshot`);
-		
+
 		// Return function to restore elements if needed
 		return function restoreStickyElements() {
-			stickyElements.forEach(item => {
+			stickyElements.forEach((item) => {
 				item.element.style.position = item.originalPosition;
 				item.element.style.display = item.originalDisplay;
 				item.element.style.visibility = item.originalVisibility;
@@ -282,7 +284,48 @@
 	function getFinalScreenshot() {
 		return new Promise((resolve) => {
 			try {
-				screenshotCanvas.toBlob((blob) => {
+				// First, trim any transparent space at the bottom of the canvas
+				const trimCanvas = () => {
+					const ctx = screenshotCanvas.getContext('2d');
+					const width = screenshotCanvas.width;
+					const height = screenshotCanvas.height;
+					
+					// Start from the bottom and work upward
+					let bottomY = height - 1;
+					const imageData = ctx.getImageData(0, 0, width, height);
+					const data = imageData.data;
+					
+					// Find the last non-transparent row
+					let foundNonTransparent = false;
+					while (bottomY >= 0 && !foundNonTransparent) {
+						for (let x = 0; x < width; x++) {
+							const alpha = data[((bottomY * width) + x) * 4 + 3];
+							if (alpha > 0) {
+								foundNonTransparent = true;
+								break;
+							}
+						}
+						if (!foundNonTransparent) {
+							bottomY--;
+						}
+					}
+					
+					// If we found transparent space, create a new trimmed canvas
+					if (bottomY < height - 1) {
+						const trimmedCanvas = document.createElement('canvas');
+						trimmedCanvas.width = width;
+						trimmedCanvas.height = bottomY + 1;
+						const trimmedCtx = trimmedCanvas.getContext('2d');
+						trimmedCtx.drawImage(screenshotCanvas, 0, 0);
+						return trimmedCanvas;
+					}
+					
+					return screenshotCanvas;
+				};
+				
+				const finalCanvas = trimCanvas();
+				
+				finalCanvas.toBlob((blob) => {
 					console.log({ blob });
 					// Render blob on the page for debugging/preview
 					const blobUrl = URL.createObjectURL(blob);
