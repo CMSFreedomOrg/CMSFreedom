@@ -1,26 +1,29 @@
 {
-	"manifest_version": 3,
-	"name": "Responsive Full Page Screenshot",
-	"description": "Captures full-page screenshots at mobile, tablet, and desktop sizes.",
+	"name": "Full Page Screenshot Extension",
 	"version": "1.0",
+	"manifest_version": 3,
+	"description": "Captures full-page screenshots by scrolling.",
 	"permissions": [
-	  "activeTab",
-	  "tabs",
-	  "scripting",
-	  "downloads"
+		"activeTab", 
+		"scripting", 
+		"tabs", 
+		"storage", 
+		"downloads"
 	],
-	"action": {
-	  "default_popup": "popup.html",
-	  "default_title": "Capture Screens"
-	},
+	"host_permissions": ["<all_urls>"],
 	"background": {
-	  "service_worker": "background.js"
+	  "service_worker": "background.js",
+	  "type": "module"
+	},
+	"action": {
+	  "default_popup": "popup.html"
 	},
 	"content_scripts": [
-	  {
-		"matches": ["<all_urls>"],
-		"js": ["contentScript.js"]
-	  }
+		{
+			"matches": ["http://*/*", "https://*/*", "file://*/*"],
+			"js": ["contentScript.js"],
+			"run_at": "document_idle"
+		}
 	]
   }
   
