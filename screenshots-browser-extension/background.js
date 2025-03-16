@@ -1,5 +1,3 @@
-// This script handles the process of repeatedly scrolling and capturing.
-
 // Store the target tab ID for capturing
 let targetTabId = null;
 

@@ -16,7 +16,7 @@ function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): s
     if (empty($options['apiKey'])) {
         throw new Exception('API key is required in options');
     }
-    if (empty($options['model'])) {
+    if (empty($options['payload']['model'])) {
         throw new Exception('Model is required in options');
     }
 
@@ -28,18 +28,7 @@ function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): s
 			if (! is_string($item)) {
 				throw new Exception("Input at index {$index} is not a string or valid file path: " . print_r($item, true));
 			}
-			if (filter_var($item, FILTER_VALIDATE_URL)) {
-				// If it's a URL, fetch the image and convert to base64
-				$imageData = file_get_contents($item);
-				if ($imageData === false) {
-					throw new Exception("Failed to fetch image from URL at index {$index}");
-				}
-				$base64Image = 'data:image/jpeg;base64,' . base64_encode($imageData);
-				$contentParts[] = [
-					'type' => 'image_url',
-					'image_url' => ['url' => $base64Image]
-				];
-			} elseif (is_file($item)) {
+			if (filter_var($item, FILTER_VALIDATE_URL) || is_file($item)) {
 				// Handle local file paths
 				$imageData = file_get_contents($item);
 				if ($imageData === false) {
@@ -64,19 +53,20 @@ function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): s
 				];
 			}
 		}
-		$prompts[] = [
-			'role' => $role,
-			'content' => $contentParts
-		];
+		if($contentParts) {
+			$prompts[] = [
+				'role' => $role,
+				'content' => $contentParts
+			];
+		}
 	}
 
 	$stream = $options['stream'] ?? false;
     // Prepare the request payload
-    $payload = [
-        'model' => $options['model'],
+    $payload = array_merge([
         'messages' => $prompts,
         'stream' => $stream
-    ];
+    ], $options['payload'] ?? []);
 
     // Add optional parameters if provided
     if (isset($options['temperature'])) {

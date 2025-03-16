@@ -49,7 +49,7 @@ const screenshots = await new Promise((resolve, reject) => {
 		if (msg.type === 'PROGRESS_UPDATE') {
 			const { currentY, totalY, totalScreenshots, currentScreenshot } = msg;
 			const percentage = Math.round((currentY / totalY) * 100);
-			document.getElementById('progressBar').style.width = `${percentage}%`;
+			document.getElementById('progressBar').value = percentage;
 			document
 				.getElementById('modalContent')
 				.querySelector(
@@ -68,11 +68,66 @@ const screenshots = await new Promise((resolve, reject) => {
 
 const screeenshotFiles = {};
 for (let i = 0; i < screenshots.length; i++) {
-	screeenshotFiles[`screenshot-${i}.base64`] = screenshots[i];
+	// Process screenshot: resize and slice into manageable chunks
+	const img = new Image();
+	img.src = screenshots[i];
+	
+	// Create a canvas to resize the image
+	const canvas = document.createElement('canvas');
+	const ctx = canvas.getContext('2d');
+	
+	// Wait for the image to load
+	await new Promise(resolve => {
+		img.onload = () => {
+			// Calculate new dimensions (max width 2000px)
+			const maxWidth = 2000;
+			let newWidth = img.width;
+			let newHeight = img.height;
+			
+			if (newWidth > maxWidth) {
+				const ratio = maxWidth / newWidth;
+				newWidth = maxWidth;
+				newHeight = Math.floor(img.height * ratio);
+			}
+			
+			// Set canvas size for the resized image
+			canvas.width = newWidth;
+			canvas.height = newHeight;
+			
+			// Draw the resized image
+			ctx.drawImage(img, 0, 0, newWidth, newHeight);
+			
+			// Slice the image into chunks of max 768px height
+			const maxChunkHeight = 768;
+			const numChunks = Math.ceil(newHeight / maxChunkHeight);
+			
+			for (let j = 0; j < numChunks; j++) {
+				const chunkCanvas = document.createElement('canvas');
+				const chunkCtx = chunkCanvas.getContext('2d');
+				
+				const chunkHeight = Math.min(maxChunkHeight, newHeight - (j * maxChunkHeight));
+				chunkCanvas.width = newWidth;
+				chunkCanvas.height = chunkHeight;
+				
+				// Draw the slice to the chunk canvas
+				chunkCtx.drawImage(
+					canvas, 
+					0, j * maxChunkHeight, newWidth, chunkHeight,
+					0, 0, newWidth, chunkHeight
+				);
+				
+				// Convert to base64 and store
+				const chunkDataUrl = chunkCanvas.toDataURL('image/png');
+				screeenshotFiles[`screenshot-${i}-chunk-${j}.base64`] = chunkDataUrl;
+			}
+			
+			resolve();
+		};
+	});
 }
 
 document.getElementById('progress-prompt').textContent = 'Using AI to analyze and convert your site. This may take a while...';
-document.getElementById('progressBar').classList.add('indeterminate');
+document.getElementById('progressBar').removeAttribute('value');
 
 const client = await startPlaygroundWeb({
 	iframe: document.getElementById('wp-playground'),
@@ -110,17 +165,7 @@ const client = await startPlaygroundWeb({
 					name: 'wordpress',
 					files: screeenshotFiles,
 				},
-			},
-			// {
-			// 	step: 'runPHPWithOptions',
-			// 	options: {
-			// 		code: '<?php require_once "/wordpress/wp-php-importer/entrypoint.php";',
-			// 		env: {
-			// 			ENTRY_URL: siteUrl,
-			// 			OPENAI_API_KEY: '',
-			// 		},
-			// 	},
-			// },
+			}
 		],
 	},
 });

@@ -27,28 +27,34 @@
     }
     #progressContainer {
       width: 80%;
-      background: #ddd;
-      height: 10px;
       margin-top: 10px;
     }
-    #progressBar {
+    progress {
+      width: 100%;
       height: 10px;
-      width: 0%;
-      background: #4caf50;
+      -webkit-appearance: none;
+      appearance: none;
     }
-    #progressBar.indeterminate {
-      width: 40%;
-      position: relative;
-      animation: move 2s linear infinite;
-      background: linear-gradient(to right, #4caf50, #8bc34a);
+    progress::-webkit-progress-bar {
+      background-color: #ddd;
+      border-radius: 2px;
     }
-    @keyframes move {
-      0% {
-        left: -40%;
-      }
-      100% {
-        left: 100%;
-      }
+    progress::-webkit-progress-value {
+      background-color: #4caf50;
+      border-radius: 2px;
+    }
+    progress::-moz-progress-bar {
+      background-color: #4caf50;
+      border-radius: 2px;
+    }
+    progress:indeterminate {
+      background: linear-gradient(to right, #4caf50 30%, #8bc34a 50%, #4caf50 70%);
+      background-size: 200% 100%;
+      animation: indeterminate-progress 1.5s linear infinite;
+    }
+    @keyframes indeterminate-progress {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
     #iframeContainer {
       position: absolute;
@@ -69,7 +75,7 @@
   <div id="modalContent">
     <h2 id="progress-prompt">Migrating your site...</h2>
     <div id="progressContainer">
-      <div id="progressBar"></div>
+      <progress id="progressBar" value="0" max="100"></progress>
     </div>
   </div>
   <div id="iframeContainer">
