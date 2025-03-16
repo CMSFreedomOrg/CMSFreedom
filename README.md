@@ -3,8 +3,6 @@ CMSFreedom was a project launched at [Cloudfest Hackathon 2025](https://hackatho
 
 The main website is at [CMSFreedom.org](https://cmsfreedom.org)
 
-
-
 # What is CMSFreedom?
 CMSFreedom is a Chromium browser plugin which can be used to convert static HTML webpages into a functional WordPress block theme. This is created within WordPress Playground and is ready for users to edit, test and export into their own WordPress instance.
 
@@ -17,7 +15,6 @@ The browser extension will then take multiple screenshots of the webpage, and op
 Once complete, the browser extension will send the screenshots and preproccesed HTML to the LLM to identify the structure of the page.  
 
 The WordPress plugin within the playground instance will then postprocess the response from the LLM and create the strucutre in standard JSON format.
-
 
 # Process Chart
 ```mermaid
