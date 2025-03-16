@@ -211,6 +211,7 @@ async function captureFullPage(tabId, width) {
 		}
 
 		let step = 0;
+		let lastScrollY = null;
 		while (totalScrolledHeight < maxScrollHeight) {
 			const scrollY = step * scrollIncrement;
 
@@ -229,6 +230,11 @@ async function captureFullPage(tabId, width) {
 			}
 
 			const actualScrollY = scrollResult.actualScrollY;
+			if (lastScrollY !== null && lastScrollY === actualScrollY) {
+				// If we didn't move, we've reached the bottom
+				console.log('Reached the bottom');
+				break;
+			}
 			totalScrolledHeight = actualScrollY;
 
 			// Wait a bit after scrolling before capturing
@@ -276,7 +282,7 @@ async function captureFullPage(tabId, width) {
 				});
 			}
 
-			if (actualScrollY !== scrollY) {
+			if (scrollResult.reachedTheBottom) {
 				break;
 			}
 
@@ -284,6 +290,7 @@ async function captureFullPage(tabId, width) {
 			await wait(50);
 
 			step++;
+			lastScrollY = actualScrollY;
 		}
 
 		// Get the final screenshot from content script
@@ -324,8 +331,8 @@ function arrayBufferToBase64(buffer) {
 async function sendMessageToTab(tabId, message, silent = false) {
 	try {
 		// Send a PING message to check readiness
-		const pingResponse = await new Promise((resolve) => {
-			chrome.tabs.sendMessage(tabId, { action: 'PING' }, (response) => {
+		const pingResponse = await new Promise(resolve => {
+			chrome.tabs.sendMessage(tabId, { action: 'PING' }, response => {
 				resolve(response);
 			});
 		});
@@ -336,7 +343,7 @@ async function sendMessageToTab(tabId, message, silent = false) {
 
 		// Send the actual message
 		return new Promise((resolve, reject) => {
-			chrome.tabs.sendMessage(tabId, message, (response) => {
+			chrome.tabs.sendMessage(tabId, message, response => {
 				if (chrome.runtime.lastError) {
 					if (!silent) {
 						console.error('Error sending message:', chrome.runtime.lastError);
@@ -354,5 +361,5 @@ async function sendMessageToTab(tabId, message, silent = false) {
 }
 
 function wait(ms) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
+	return new Promise(resolve => setTimeout(resolve, ms));
 }

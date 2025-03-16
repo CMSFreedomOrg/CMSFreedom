@@ -41,7 +41,7 @@
 	function startImageObserver() {
 		// Create the observer if it doesn't exist
 		if (!imageObserver) {
-			imageObserver = new MutationObserver((mutations) => {
+			imageObserver = new MutationObserver(mutations => {
 				for (const mutation of mutations) {
 					if (mutation.type === 'childList') {
 						for (const node of mutation.addedNodes) {
@@ -109,7 +109,7 @@
 
 	// Function to scroll to a specific position and wait for content to stabilize
 	async function scrollAndWaitForContent(scrollY) {
-		return new Promise(async (resolve) => {
+		return new Promise(async resolve => {
 			try {
 				// Scroll to the position
 				window.scrollTo({
@@ -118,7 +118,7 @@
 				});
 
 				// Wait for initial scroll to complete
-				await new Promise((r) => setTimeout(r, 200));
+				await new Promise(r => setTimeout(r, 200));
 
 				// Track layout stability
 				let lastHeight = document.body.scrollHeight;
@@ -174,10 +174,7 @@
 			const devicePixelRatio = window.devicePixelRatio || 1;
 			const width = window.innerWidth;
 			const height = window.innerHeight;
-			const totalWidth = Math.max(
-				document.body.scrollWidth,
-				document.documentElement.scrollWidth
-			);
+			const totalWidth = Math.max(document.body.scrollWidth, document.documentElement.scrollWidth);
 			const totalHeight = Math.max(
 				document.body.scrollHeight,
 				document.documentElement.scrollHeight
@@ -215,7 +212,7 @@
 
 		// Find elements with position: fixed or sticky
 		const allElements = document.querySelectorAll('*');
-		allElements.forEach((element) => {
+		allElements.forEach(element => {
 			const computedStyle = window.getComputedStyle(element);
 			const position = computedStyle.getPropertyValue('position');
 
@@ -241,7 +238,7 @@
 
 		// Return function to restore elements if needed
 		return function restoreStickyElements() {
-			stickyElements.forEach((item) => {
+			stickyElements.forEach(item => {
 				item.element.style.position = item.originalPosition;
 				item.element.style.display = item.originalDisplay;
 				item.element.style.visibility = item.originalVisibility;
@@ -252,7 +249,7 @@
 
 	// Draw image on canvas at specified position
 	async function drawImageOnCanvas(dataUrl, x, y) {
-		return new Promise((resolve) => {
+		return new Promise(resolve => {
 			try {
 				const img = new Image();
 				img.crossOrigin = 'anonymous'; // Try to handle cross-origin images
@@ -267,7 +264,7 @@
 					}
 				};
 
-				img.onerror = (error) => {
+				img.onerror = error => {
 					console.error('Error loading image:', error);
 					resolve({ success: false, error: 'Failed to load image' });
 				};
@@ -282,24 +279,24 @@
 
 	// Get the final screenshot as a blob
 	function getFinalScreenshot() {
-		return new Promise((resolve) => {
+		return new Promise(resolve => {
 			try {
 				// First, trim any transparent space at the bottom of the canvas
 				const trimCanvas = () => {
 					const ctx = screenshotCanvas.getContext('2d');
 					const width = screenshotCanvas.width;
 					const height = screenshotCanvas.height;
-					
+
 					// Start from the bottom and work upward
 					let bottomY = height - 1;
 					const imageData = ctx.getImageData(0, 0, width, height);
 					const data = imageData.data;
-					
+
 					// Find the last non-transparent row
 					let foundNonTransparent = false;
 					while (bottomY >= 0 && !foundNonTransparent) {
 						for (let x = 0; x < width; x++) {
-							const alpha = data[((bottomY * width) + x) * 4 + 3];
+							const alpha = data[(bottomY * width + x) * 4 + 3];
 							if (alpha > 0) {
 								foundNonTransparent = true;
 								break;
@@ -309,7 +306,7 @@
 							bottomY--;
 						}
 					}
-					
+
 					// If we found transparent space, create a new trimmed canvas
 					if (bottomY < height - 1) {
 						const trimmedCanvas = document.createElement('canvas');
@@ -319,13 +316,13 @@
 						trimmedCtx.drawImage(screenshotCanvas, 0, 0);
 						return trimmedCanvas;
 					}
-					
+
 					return screenshotCanvas;
 				};
-				
+
 				const finalCanvas = trimCanvas();
-				
-				finalCanvas.toBlob((blob) => {
+
+				finalCanvas.toBlob(blob => {
 					// Clean up the blob URL when the image is removed
 					// previewImg.onload = () => URL.revokeObjectURL(blobUrl);
 					if (blob) {
@@ -366,14 +363,22 @@
 					// If we're already processing, wait a bit
 					setTimeout(() => {
 						scrollAndWaitForContent(message.scrollY).then(() =>
-							sendResponse({ success: true, actualScrollY: window.scrollY })
+							sendResponse({
+								success: true,
+								actualScrollY: window.scrollY,
+								reachedTheBottom: window.scrollY + window.innerHeight >= document.body.scrollHeight,
+							})
 						);
 					}, 100);
 				} else {
 					isProcessingScreenshot = true;
 					scrollAndWaitForContent(message.scrollY).then(() => {
 						isProcessingScreenshot = false;
-						sendResponse({ success: true, actualScrollY: window.scrollY });
+						sendResponse({
+							success: true,
+							actualScrollY: window.scrollY,
+							reachedTheBottom: window.scrollY + window.innerHeight >= document.body.scrollHeight,
+						});
 					});
 				}
 				return true; // Indicates async response
@@ -386,12 +391,12 @@
 				sendResponse(result);
 			} else if (message.action === 'DRAW_IMAGE') {
 				console.log('Drawing image', message.x, message.y);
-				drawImageOnCanvas(message.dataUrl, message.x, message.y).then((result) =>
+				drawImageOnCanvas(message.dataUrl, message.x, message.y).then(result =>
 					sendResponse(result)
 				);
 				return true; // Indicates async response
 			} else if (message.action === 'GET_FINAL_SCREENSHOT') {
-				getFinalScreenshot().then((blob) => {
+				getFinalScreenshot().then(blob => {
 					try {
 						// Convert blob to array buffer for sending via message
 						const reader = new FileReader();
@@ -401,7 +406,7 @@
 								imageData: reader.result,
 							});
 						};
-						reader.onerror = (error) => {
+						reader.onerror = error => {
 							console.error('Error reading blob:', error);
 							sendResponse({ success: false, error: 'Failed to read blob' });
 						};
