@@ -34,49 +34,15 @@ async function processFileTree(fileTree, basePath = '') {
 }
 
 // Define the file tree structure
-const filesToPutInPlayground = await processFileTree({
+const phpFilesToPutInPlayground = await processFileTree({
 	'wp-php-importer': {
 		'entrypoint.php': 'entrypoint.php',
 		'openai-prompt.php': 'openai-prompt.php',
 	},
 });
 
-const clientPromise = startPlaygroundWeb({
-	iframe: document.getElementById('wp-playground'),
-	remoteUrl: `https://playground.wordpress.net/remote.html`,
-	blueprint: {
-		landingPage: '/wp-admin/',
-		preferredVersions: {
-			php: '8.0',
-			wp: 'latest',
-		},
-		features: {
-			networking: true,
-		},
-		steps: [
-			{
-				step: 'login',
-				username: 'admin',
-				password: 'password',
-			},
-			{
-				step: 'mkdir',
-				path: '/wordpress/entrypoint',
-			},
-			{
-				step: 'writeFiles',
-				writeToPath: '/wordpress',
-				filesTree: {
-					resource: 'literal:directory',
-					name: 'wordpress',
-					files: filesToPutInPlayground,
-				},
-			},
-		],
-	},
-});
-
-const screenshotsPromise = new Promise((resolve, reject) => {
+let siteUrl = null;
+const screenshots = await new Promise((resolve, reject) => {
 	const screenshots = [];
 	chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 		console.log('Message received', msg);
@@ -94,25 +60,70 @@ const screenshotsPromise = new Promise((resolve, reject) => {
 			screenshots.push(msg.screenshot);
 		} else if (msg.type === 'ALL_SCREENSHOTS_COMPLETE') {
 			console.log('All screenshots complete', { length: screenshots.length });
+			siteUrl = msg.siteUrl;
 			resolve(screenshots);
 		}
 	});
 });
 
-Promise.all([clientPromise, screenshotsPromise]).then(async ([client, screenshots]) => {
-	console.log('All promises resolved', { screenshots, length: screenshots.length });
-	for (let i = 0; i < screenshots.length; i++) {
-		await client.writeFile(`/tmp/screenshot-${i}.base64`, screenshots[i]);
-	}
+const screeenshotFiles = {};
+for (let i = 0; i < screenshots.length; i++) {
+	screeenshotFiles[`screenshot-${i}.base64`] = screenshots[i];
+}
 
-	console.log("Running the LLM")
+document.getElementById('progress-prompt').textContent = 'Using AI to analyze and convert your site. This may take a while...';
+document.getElementById('progressBar').classList.add('indeterminate');
 
-	const response = await client.run({
-		code: '<?php require_once "/wordpress/wp-php-importer/entrypoint.php";',
-		env: {
-			ENTRY_URL: 'https://adamadam.blog',
-			OPENAI_API_KEY: '',
+const client = await startPlaygroundWeb({
+	iframe: document.getElementById('wp-playground'),
+	remoteUrl: `https://playground.wordpress.net/remote.html`,
+	corsProxy: 'https://wordpress-playground-cors-proxy.net/',
+	blueprint: {
+		login: true,
+		landingPage: '/wp-admin/',
+		preferredVersions: {
+			php: '8.0',
+			wp: 'latest',
 		},
-	});
-	console.log(response.text);
+		features: {
+			networking: true,
+		},
+		steps: [
+			{
+				step: 'mkdir',
+				path: '/wordpress/entrypoint',
+			},
+			{
+				step: 'writeFiles',
+				writeToPath: '/wordpress',
+				filesTree: {
+					resource: 'literal:directory',
+					name: 'wordpress',
+					files: phpFilesToPutInPlayground,
+				},
+			},
+			{
+				step: 'writeFiles',
+				writeToPath: '/tmp',
+				filesTree: {
+					resource: 'literal:directory',
+					name: 'wordpress',
+					files: screeenshotFiles,
+				},
+			},
+			{
+				step: 'runPHPWithOptions',
+				options: {
+					code: '<?php require_once "/wordpress/wp-php-importer/entrypoint.php";',
+					env: {
+						ENTRY_URL: siteUrl,
+						OPENAI_API_KEY: '',
+					},
+				},
+			},
+		],
+	},
 });
+
+document.getElementById('modalContent').remove();
+

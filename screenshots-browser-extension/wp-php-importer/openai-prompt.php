@@ -8,7 +8,7 @@
  * @return string The response text from the API
  * @throws Exception If required options are missing or on API errors
  */
-function openAIPrompt(array $inputs, array $options): string {
+function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): string {
     // Validate required options
     if (empty($options['apiEndpoint'])) {
         throw new Exception('API endpoint is required in options');
@@ -21,58 +21,61 @@ function openAIPrompt(array $inputs, array $options): string {
     }
 
     // Process all inputs to create content parts
-    $contentParts = [];
-    foreach ($inputs as $index => $item) {
-        if (! is_string($item)) {
-            throw new Exception("Input at index {$index} is not a string or valid file path: " . print_r($item, true));
-		}
-		if (filter_var($item, FILTER_VALIDATE_URL)) {
-			// If it's a URL, fetch the image and convert to base64
-			$imageData = file_get_contents($item);
-			if ($imageData === false) {
-				throw new Exception("Failed to fetch image from URL at index {$index}");
+	$prompts = [];
+	foreach (['system' => $systemPrompt, 'user' => $userPrompt] as $role => $inputs) {
+		$contentParts = [];
+		foreach ($inputs as $index => $item) {
+			if (! is_string($item)) {
+				throw new Exception("Input at index {$index} is not a string or valid file path: " . print_r($item, true));
 			}
-			$base64Image = 'data:image/jpeg;base64,' . base64_encode($imageData);
-			$contentParts[] = [
-				'type' => 'image_url',
-				'image_url' => ['url' => $base64Image]
-			];
-		} elseif (is_file($item)) {
-			// Handle local file paths
-			$imageData = file_get_contents($item);
-			if ($imageData === false) {
-				throw new Exception("Failed to read image file at index {$index}");
-			}
-			$mimeType = mime_content_type($item);
-			// If the file is already base64 encoded, use it directly, otherwise encode it
-			if (pathinfo($item, PATHINFO_EXTENSION) === 'base64') {
-				$base64Image = $imageData;
+			if (filter_var($item, FILTER_VALIDATE_URL)) {
+				// If it's a URL, fetch the image and convert to base64
+				$imageData = file_get_contents($item);
+				if ($imageData === false) {
+					throw new Exception("Failed to fetch image from URL at index {$index}");
+				}
+				$base64Image = 'data:image/jpeg;base64,' . base64_encode($imageData);
+				$contentParts[] = [
+					'type' => 'image_url',
+					'image_url' => ['url' => $base64Image]
+				];
+			} elseif (is_file($item)) {
+				// Handle local file paths
+				$imageData = file_get_contents($item);
+				if ($imageData === false) {
+					throw new Exception("Failed to read image file at index {$index}");
+				}
+				$mimeType = mime_content_type($item);
+				// If the file is already base64 encoded, use it directly, otherwise encode it
+				if (pathinfo($item, PATHINFO_EXTENSION) === 'base64') {
+					$base64Image = $imageData;
+				} else {
+					$base64Image = "data:{$mimeType};base64," . base64_encode($imageData);
+				}
+				$contentParts[] = [
+					'type' => 'image_url',
+					'image_url' => ['url' => $base64Image]
+				];
 			} else {
-				$base64Image = "data:{$mimeType};base64," . base64_encode($imageData);
+				// Regular text input
+				$contentParts[] = [
+					'type' => 'text',
+					'text' => $item
+				];
 			}
-			$contentParts[] = [
-				'type' => 'image_url',
-				'image_url' => ['url' => $base64Image]
-			];
-		} else {
-			// Regular text input
-			$contentParts[] = [
-				'type' => 'text',
-				'text' => $item
-			];
 		}
-    }
+		$prompts[] = [
+			'role' => $role,
+			'content' => $contentParts
+		];
+	}
 
+	$stream = $options['stream'] ?? false;
     // Prepare the request payload
     $payload = [
         'model' => $options['model'],
-        'messages' => [
-            [
-                'role' => 'user',
-                'content' => $contentParts
-            ]
-        ],
-        'stream' => true
+        'messages' => $prompts,
+        'stream' => $stream
     ];
 
     // Add optional parameters if provided
@@ -106,6 +109,10 @@ function openAIPrompt(array $inputs, array $options): string {
     if ($status_code !== 200) {
         throw new Exception("Request failed with status {$status_code}: {$body}");
     }
+
+	if (!$stream) {
+		return $body;
+	}
 
     // Process the response
     $resultText = '';

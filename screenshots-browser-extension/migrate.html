@@ -36,6 +36,20 @@
       width: 0%;
       background: #4caf50;
     }
+    #progressBar.indeterminate {
+      width: 40%;
+      position: relative;
+      animation: move 2s linear infinite;
+      background: linear-gradient(to right, #4caf50, #8bc34a);
+    }
+    @keyframes move {
+      0% {
+        left: -40%;
+      }
+      100% {
+        left: 100%;
+      }
+    }
     #iframeContainer {
       position: absolute;
       top: 0;

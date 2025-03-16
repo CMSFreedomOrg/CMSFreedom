@@ -72,7 +72,8 @@ captureBtn.addEventListener('click', async () => {
 		// Trigger the background process with the stored tab ID
 		const response = await chrome.runtime.sendMessage({ 
 			type: 'START_CAPTURE', 
-			tabId: targetTabId 
+			tabId: targetTabId,
+			siteUrl: tab.url
 		});
 		
 		if (response && response.status === 'done') {

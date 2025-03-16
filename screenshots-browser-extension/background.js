@@ -5,6 +5,7 @@ let targetTabId = null;
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 	if (message.type === 'START_CAPTURE') {
+		const url = message.siteUrl;
 		// Store the target tab ID
 		targetTabId = message.tabId;
 		const dims = await sendMessageToTab(targetTabId, { action: 'GET_DIMENSIONS' });
@@ -36,6 +37,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 			}
 			chrome.runtime.sendMessage({
 				type: 'ALL_SCREENSHOTS_COMPLETE',
+				siteUrl: url,
 			});
 			// If all screenshots are done, resize the window back to the original width
 			const tab = await chrome.tabs.get(targetTabId);
