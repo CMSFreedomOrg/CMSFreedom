@@ -3,6 +3,30 @@
 require_once '/Users/dmsnell/load-html-api.php';
 
 class HTML_Inferer extends WP_HTML_Processor {
+	public static function extract( $html, $selector ) {
+		set_error_handler( function () { return true; } );
+		$dom = \DOM\HtmlDocument::createFromString( $html );
+		$node = $dom->querySelector( $selector );
+		$fragment = $dom->saveHtml( $node );
+		restore_error_handler();
+
+		return $fragment;
+	}
+
+	public static function stamp_out( $html, $selector, $id, $label ) {
+		set_error_handler( function () { return true; } );
+		$dom = \DOM\HtmlDocument::createFromString( $html );
+		$node = $dom->querySelector( $selector );
+		$div = $dom->createElement( 'div' );
+		$div->setAttribute( 'id', $id );
+		$div->innerHTML = $label;
+		$node->parentNode->replaceChild( $div, $node );
+		$fragment = $dom->saveHtml();
+		restore_error_handler();
+
+		return $fragment;
+	}
+
 	public static function for_structure( $html ) {
 		$p = WP_HTML_Processor::create_full_parser( $html );
 		$o = '';

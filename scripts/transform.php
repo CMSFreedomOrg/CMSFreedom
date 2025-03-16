@@ -8,12 +8,20 @@ function main() {
 	$html = file_get_contents( 'php://stdin' );
 
 	switch ( $argv[1] ) {
+		case 'extract':
+			echo HTML_Inferer::extract( $html, $argv[2] );
+			break;
+
 		case 'for.context':
 			echo HTML_Inferer::for_context( $html );
 			break;
 
 		case 'for.structure':
 			echo HTML_Inferer::for_structure( $html );
+			break;
+
+		case 'stamp.out':
+			echo HTML_Inferer::stamp_out( $html, $argv[2], $argv[3], $argv[4] );
 			break;
 
 		case 'strip.output':
