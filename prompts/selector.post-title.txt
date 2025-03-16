@@ -1,0 +1,1 @@
+Find a CSS selector to extract the page's post title. This is something different from the HTML <title> tag. It's a unique title for each document and generally appears highlighted in some way, such as with an appropriate CSS class name, or inside an H2 element.

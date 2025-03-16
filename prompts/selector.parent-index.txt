@@ -1,0 +1,7 @@
+The HTML document represents a kind of "single" view, where a specific document
+in a collection is being rendered. Usually a site will have a kind of "index" page
+or "blogroll" or "archive" page with a list of pages.
+
+For "single" view pages like this one, find a CSS selector which points to a link
+back "upwards" to the parent index page. Return the CSS selector as well as the URL
+for parent index page.

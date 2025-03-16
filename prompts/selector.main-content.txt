@@ -1,0 +1,17 @@
+This is a "single" view render of a page on a CMS. As a "single" view there is a
+central "post" or "object" being rendered in a "main content" region. This region
+is found within a much broader layout. Every post or object is rendered with the
+same template, but the content within the "main content" region is pulled from
+the specific post or object in a database.
+
+Usually these areas are found within some kind of <main>, <article>, or <div> tag,
+and they usually have CSS classes indicating that they are the main content. Within
+this same container element is usually a CSS class name or a custom data attribute
+indicating some kind of ID or GUID or UUID which refers to the specific post or
+object being rendered.
+
+Create a CSS selector which points to this main content region and try to find the
+ID corresponding to the specific post being rendered in this single view. If you can
+find the ID return it with the CSS selector with the property name "id". If you cannot
+find the ID then return a value of "null" for the "id" property.
+

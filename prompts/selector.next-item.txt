@@ -1,0 +1,95 @@
+The HTML document represents a kind of "single" view, where a specific document
+in a collection is being rendered. Usually a single-view-type page will have some
+kind of previous/next link information it. Sometimes these come in the form of
+standard HTML <link> tags, for example:
+
+```html
+<link rel="prev" href="/2025/03/15/networking-the-first-night">
+<link rel="next" href="/2025/03/17/forcusing-on-the-project">
+```
+
+These two <link> elements directly encode the previous and next page. If there are
+no more previous posts/articles/objects, then the <link rel=prev> element would be
+missing and only the <link rel=next> would appear. Likewise, if the single-view page
+is for the newest post/article/object, then the <link rel=next> element would be
+missing and only the <link rel=prev> would appear.
+
+Instead of this, however, some sites might implicitly encode these relationships
+through CSS classes on <a> elements. For example:
+
+```html
+<a class="prev" href="/2025-03-15/networking-the-first-night">Previous Note</a>
+<a class="next" href="/2025-03-17/focusing-on-the-project">Next Note</a>
+```
+
+The same rules apply here as with the <link> elements: they only exist if there
+is actually a reference previous or next page.
+
+Sometimes these are even more implicit within <a> elements because there is no
+CSS class indicating the purpose of the link and it's necessary to rely on the link
+text to infer which is which and which are available. In these cases, the prev/next
+links tend to appear at the end of the page and underneath the main contents of
+the page. The link text will tend to use either chronological wording with
+contrasting pairs, like prev/next or older/newer, or last/next, etc... or include
+a pair of links or two columns, or just a link on the left side using something
+like the article title for the link text. Prev/next links are usually the only things
+in their container or visual line, except perhaps for some short text to separate them,
+such as a pipe "|" character. For example:
+
+```html
+<h2>Why bees are so efficient</h2>
+<p>Bees have to make honey to survive.</p>
+<ul>
+    <li>Bees live in colonies.
+    <li>A single queen directs all of the drones.
+    <li>Bees also produce "royal jam"
+<ul>
+<p>Many farmers keep bees because they
+   polinate their crops. This is good for
+   food production.</p>
+<hr>
+<p><a href="?p=14">Prev</a> | <a href="?p=18">Next</a></p>
+```
+
+In this example, the prev/next links are pointing to "?p=14"
+and to "?p=18", as they are found at the bottom of the content
+and use prev/next-related terminology. Consider this other example:
+
+```html
+<nav> ... </nav>
+<article>
+    <div>
+        <div><strong>The first coat of paint</strong></div>
+        <div><time>March 15, 2025</time>, by <span class="author">Roger</span></div>
+    </div>
+    <div class="content">
+    <p>Today we sprayed the first of several coats on the sandblasted frame...
+    ...
+    <p>So hopefully we'll keep the room clean for the next few days and
+       have a successful few coats and have a durable finish.</p>
+    </div>
+</article>
+<footer>
+<div><a href="/sandblasting-the-frame">Sandblasting the frame</a></div>
+<div class="comments">
+...
+</div>
+</footer>
+```
+
+In this example the post only has a single prev link and no next link.
+The prev link points to "/sandblasting-the-frame" because the link comes
+at the end of the content, is inside a wrapping div which has nothing more
+than one or two links and some short plaintext, and the HREF value is a
+relative link (same domain/same base URL) as the article itself.
+
+These rules are fuzzy so check your work a few times to make a best-effort
+guess at what comes next and what comes previously. Pick the most-confident
+links, where <link rel="prev"> and <link ref="next"> tags are the most confident,
+where CSS classes like "prev" and "next" come next, especially if they are at the
+very start or very end of the main content area, and the fully-implicit links
+are the least confident.
+
+For "single" view pages like this one, find a CSS selector which points to a "prev_link"
+and a "next_link". For each one, return the CSS selector as "prev_selector" and "next_selector"
+as well as the URLs from those links as "prev_url" and "next_url"
