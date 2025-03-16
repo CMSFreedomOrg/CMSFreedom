@@ -3,18 +3,11 @@
 	"version": "1.0",
 	"manifest_version": 3,
 	"description": "Captures full-page screenshots by scrolling.",
-	"permissions": [
-		"activeTab", 
-		"scripting", 
-		"tabs", 
-		"storage", 
-		"downloads",
-		"webNavigation"
-	],
+	"permissions": ["activeTab", "scripting", "tabs", "storage", "downloads", "webNavigation"],
 	"host_permissions": ["<all_urls>"],
 	"background": {
-	  "service_worker": "background.js",
-	  "type": "module"
+		"service_worker": "background.js",
+		"type": "module"
 	},
 	"action": {
 		"default_title": "Capture Screenshots",
@@ -29,9 +22,15 @@
 	],
 	"web_accessible_resources": [
 		{
-			"resources": ["playground-client.js", "migrate.js", "migrate.html"],
+			"resources": [
+				"playground-client.js",
+				"migrate.js",
+				"migrate.html",
+				"wp-php-importer/entrypoint.php",
+				"wp-php-importer/openai-prompt.php",
+				"wp-php-importer/example-screenshot.php"
+			],
 			"matches": ["<all_urls>"]
 		}
 	]
-  }
-  
+}

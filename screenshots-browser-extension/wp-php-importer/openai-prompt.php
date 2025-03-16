@@ -23,40 +23,44 @@ function openAIPrompt(array $inputs, array $options): string {
     // Process all inputs to create content parts
     $contentParts = [];
     foreach ($inputs as $index => $item) {
-        if (is_string($item)) {
-            if (filter_var($item, FILTER_VALIDATE_URL)) {
-                // If it's a URL, fetch the image and convert to base64
-                $imageData = file_get_contents($item);
-                if ($imageData === false) {
-                    throw new Exception("Failed to fetch image from URL at index {$index}");
-                }
-                $base64Image = 'data:image/jpeg;base64,' . base64_encode($imageData);
-                $contentParts[] = [
-                    'type' => 'image_url',
-                    'image_url' => ['url' => $base64Image]
-                ];
-            } else {
-                // Regular text input
-                $contentParts[] = [
-                    'type' => 'text',
-                    'text' => $item
-                ];
-            }
-        } elseif (is_file($item)) {
-            // Handle local file paths
-            $imageData = file_get_contents($item);
-            if ($imageData === false) {
-                throw new Exception("Failed to read image file at index {$index}");
-            }
-            $mimeType = mime_content_type($item);
-            $base64Image = "data:{$mimeType};base64," . base64_encode($imageData);
-            $contentParts[] = [
-                'type' => 'image_url',
-                'image_url' => ['url' => $base64Image]
-            ];
-        } else {
-            throw new Exception("Input at index {$index} is not a string or valid file path");
-        }
+        if (! is_string($item)) {
+            throw new Exception("Input at index {$index} is not a string or valid file path: " . print_r($item, true));
+		}
+		if (filter_var($item, FILTER_VALIDATE_URL)) {
+			// If it's a URL, fetch the image and convert to base64
+			$imageData = file_get_contents($item);
+			if ($imageData === false) {
+				throw new Exception("Failed to fetch image from URL at index {$index}");
+			}
+			$base64Image = 'data:image/jpeg;base64,' . base64_encode($imageData);
+			$contentParts[] = [
+				'type' => 'image_url',
+				'image_url' => ['url' => $base64Image]
+			];
+		} elseif (is_file($item)) {
+			// Handle local file paths
+			$imageData = file_get_contents($item);
+			if ($imageData === false) {
+				throw new Exception("Failed to read image file at index {$index}");
+			}
+			$mimeType = mime_content_type($item);
+			// If the file is already base64 encoded, use it directly, otherwise encode it
+			if (pathinfo($item, PATHINFO_EXTENSION) === 'base64') {
+				$base64Image = $imageData;
+			} else {
+				$base64Image = "data:{$mimeType};base64," . base64_encode($imageData);
+			}
+			$contentParts[] = [
+				'type' => 'image_url',
+				'image_url' => ['url' => $base64Image]
+			];
+		} else {
+			// Regular text input
+			$contentParts[] = [
+				'type' => 'text',
+				'text' => $item
+			];
+		}
     }
 
     // Prepare the request payload
@@ -80,86 +84,80 @@ function openAIPrompt(array $inputs, array $options): string {
     }
 
     // Initialize cURL session
-    $ch = curl_init($options['apiEndpoint']);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $options['apiKey']
+    // Note: wp_remote_post doesn't support streaming responses directly
+    // We'll need to modify our approach to use WordPress HTTP API
+    $response = wp_remote_post($options['apiEndpoint'], [
+        'headers' => [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $options['apiKey']
         ],
-        CURLOPT_WRITEFUNCTION => function($ch, $data) {
-            static $buffer = '';
-            static $resultText = '';
-
-            $buffer .= $data;
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
-
-                if (empty($line) || str_starts_with($line, ':')) {
-                    continue;
-                }
-
-                if (str_starts_with($line, 'data: ')) {
-                    $jsonData = substr($line, 6); // Remove 'data: ' prefix
-                    if ($jsonData === '[DONE]') {
-                        break;
-                    }
-
-                    try {
-                        $parsed = json_decode($jsonData, true);
-                        if (json_last_error() === JSON_ERROR_NONE) {
-                            $content = $parsed['choices'][0]['delta']['content'] ?? 
-                                     $parsed['choices'][0]['text'] ?? '';
-                            $resultText .= $content;
-                            // echo $content; // Stream the content immediately
-                            flush();
-                        }
-                    } catch (Exception $e) {
-                        error_log('Failed to parse JSON chunk: ' . $line);
-                    }
-                }
-            }
-
-            return strlen($data);
-        }
+        'body' => json_encode($payload),
+        'timeout' => 10000, // Increase timeout for large responses
+        'stream' => false, // wp_remote_post doesn't support streaming
     ]);
 
-    // Execute the request
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    if (is_wp_error($response)) {
+        throw new Exception("Request failed: " . $response->get_error_message());
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $status_code = wp_remote_retrieve_response_code($response);
+
+    if ($status_code !== 200) {
+        throw new Exception("Request failed with status {$status_code}: {$body}");
+    }
+
+    // Process the response
+    $resultText = '';
+    $lines = explode("\n", $body);
     
-    if ($httpCode !== 200) {
-        throw new Exception("Request failed with status {$httpCode}: {$response}");
+    foreach ($lines as $line) {
+        if (empty($line) || str_starts_with($line, ':')) {
+            continue;
+        }
+
+        if (str_starts_with($line, 'data: ')) {
+            $jsonData = substr($line, 6); // Remove 'data: ' prefix
+            if ($jsonData === '[DONE]') {
+                break;
+            }
+
+            try {
+                $parsed = json_decode($jsonData, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $content = $parsed['choices'][0]['delta']['content'] ?? 
+                             $parsed['choices'][0]['text'] ?? '';
+                    $resultText .= $content;
+                }
+            } catch (Exception $e) {
+                error_log('Failed to parse JSON chunk: ' . $line);
+            }
+        }
     }
 
-    curl_close($ch);
-    return $response;
+    return $resultText;
 }
 
-// Example usage
-function exampleImageAndTextPrompt() {
-    try {
-        $options = [
-            'apiEndpoint' => 'https://api.openai.com/v1/chat/completions',
-            'apiKey' => '<OPENAI API KEY HERE>',
-            'model' => 'gpt-4o'
-        ];
+// // Example usage
+// function exampleImageAndTextPrompt($options = []) {
+//     try {
+//         $options = array_merge([
+//             'apiEndpoint' => 'https://api.openai.com/v1/chat/completions',
+//             'model' => 'gpt-4o'
+//         ], $options);
 
-        $response = openAIPrompt([
-            'What can you see in this image? Provide a detailed description. Tell me about the objects, style, colors, etc.',
-            'https://adamadam.blog/wp-content/uploads/2023/04/F62290E2-8A50-4C4F-821B-C4C085E6DF4A-768x768.jpeg'
-        ], $options);
+//         $response = openAIPrompt([
+//             'What can you see in this image? Provide a detailed description. Tell me about the objects, style, colors, etc.',
+//             'https://adamadam.blog/wp-content/uploads/2023/04/F62290E2-8A50-4C4F-821B-C4C085E6DF4A-768x768.jpeg'
+//         ], $options);
 
-        echo "Image and text response: " . $response;
-        return $response;
-    } catch (Exception $e) {
-        error_log('Error in image and text example: ' . $e->getMessage());
-        throw $e;
-    }
-}
+//         echo "Image and text response: " . $response;
+//         return $response;
+//     } catch (Exception $e) {
+//         error_log('Error in image and text example: ' . $e->getMessage());
+//         throw $e;
+//     }
+// }
 
-// Uncomment to run the example
-exampleImageAndTextPrompt(); 
+// // Uncomment to run the example
+// exampleImageAndTextPrompt(); 

@@ -37,12 +37,12 @@ captureBtn.addEventListener('click', async () => {
 		return;
 	}
 
-	// chrome.windows.create({
-	// 	url: 'migrate.html',
-	// 	type: 'popup',
-	// 	width: 800,
-	// 	height: 600
-	// });
+	chrome.windows.create({
+		url: 'migrate.html',
+		type: 'popup',
+		width: 800,
+		height: 600
+	});
 
 	currentState.style.display = 'block';
 	statusMessage.textContent = 'Taking screenshots... don\'t touch the page.';

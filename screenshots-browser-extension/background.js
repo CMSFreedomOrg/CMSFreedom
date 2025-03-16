@@ -8,14 +8,15 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 		// Store the target tab ID
 		targetTabId = message.tabId;
 		const dims = await sendMessageToTab(targetTabId, { action: 'GET_DIMENSIONS' });
-		const SIZES = [parseInt(dims.totalWidth + 15), 1024, 400];
+		// Only one size for now to iterate faster
+		const SIZES = [parseInt(dims.totalWidth + 15)];//, 1024, 400];
 
 		try {
 			// We'll capture a full-page screenshot for each size in SIZES.
 			for (let i = 0; i < SIZES.length; i++) {
 				// Make sure the target tab is active before capturing
 				await activateTab(targetTabId);
-				await captureFullPage(targetTabId, SIZES[i], (currentY, totalY) => {
+				const screenshot = await captureFullPage(targetTabId, SIZES[i], (currentY, totalY) => {
 					chrome.runtime.sendMessage({
 						type: 'PROGRESS_UPDATE',
 						currentScreenshot: i + 1,
@@ -24,11 +25,18 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 						totalY
 					});
 				});
+				await chrome.runtime.sendMessage({
+					type: 'SCREENSHOT_COMPLETE',
+					screenshot,
+				});
 				// Wait between different sizes to avoid overwhelming the browser
 				if (i < SIZES.length - 1) {
 					await wait(1000);
 				}
 			}
+			chrome.runtime.sendMessage({
+				type: 'ALL_SCREENSHOTS_COMPLETE',
+			});
 			// If all screenshots are done, resize the window back to the original width
 			const tab = await chrome.tabs.get(targetTabId);
 			const currentWindow = await chrome.windows.get(tab.windowId);
@@ -307,17 +315,7 @@ async function captureFullPage(tabId, width, onProgress) {
 			throw new Error('Failed to get final screenshot');
 		}
 
-		// Save the screenshot directly using the array buffer data
-		const timestamp = new Date().toISOString().replace(/:/g, '-');
-		const filename = `screenshot-${width}px-${timestamp}.png`;
-
-		await chrome.downloads.download({
-			url: finalResult.imageData,
-			filename: filename,
-			saveAs: false,
-		});
-
-		console.log(`Screenshot (width ${width}) saved as ${filename}`);
+		return finalResult.imageData;
 	} catch (error) {
 		console.error(`Error capturing page at width ${width}:`, error);
 		throw error; // Re-throw to be handled by the caller
