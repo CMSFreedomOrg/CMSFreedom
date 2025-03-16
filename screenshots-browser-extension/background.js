@@ -55,8 +55,18 @@ async function processNextCapture() {
 		await wait(50);
 
 		// Capture the specific tab
+		// Capture the specific tab
+		// Get the window ID from the target tab
+		let windowId = null;
+		try {
+			const tab = await chrome.tabs.get(targetTabId);
+			windowId = tab.windowId;
+		} catch (error) {
+			console.error('Error getting window ID from tab:', error);
+		}
+		console.log({ windowId, targetTabId });
 		const dataUrl = await chrome.tabs.captureVisibleTab(
-			null, // Use the current window
+			windowId, // Use the original window
 			{ format: 'png', quality: 100 }
 		);
 		resolve(dataUrl);
@@ -87,6 +97,7 @@ function captureVisibleTabRateLimited() {
 
 // Helper function to activate a specific tab
 async function activateTab(tabId) {
+	return;
 	try {
 		// Check if the tab still exists
 		const tab = await chrome.tabs.get(tabId);
@@ -95,8 +106,8 @@ async function activateTab(tabId) {
 		}
 
 		// Activate the tab and its window
-		await chrome.tabs.update(tabId, { active: true });
-		await chrome.windows.update(tab.windowId, { focused: true });
+		// await chrome.tabs.update(tabId, { active: true });
+		// await chrome.windows.update(tab.windowId, { focused: true });
 
 		// Wait a moment for the tab to become active
 		await wait(200);
