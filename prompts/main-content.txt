@@ -25,7 +25,7 @@ in the response. For example, if prompted to provide a CSS selector and the
 matching plaintext of the HTML at that selector, return with something that
 looks like this: `{"selector": "body main + h1", "content": "Sunset Geometry"}`.
 
-It will be helpful to refer to a "structural outline" of the input HTML before
+In some cases it may be helpful to create outlines of the input HTML before
 processing. For example, it might help to identify specific regions of a page
 by examining the H1-H6, SECTION, MAIN, ARTICLE, and other semantic HTML tags.
 The outline created from these sectioning elements likely separates semantically
@@ -33,9 +33,6 @@ distinct regions. Examine the CSS class names secondarily to refine the match.
 Most regions on most pages are given a meaningful class name to identify what's
 going on. Examine any given custom data-attributes as well since those often
 convery structural information about an element, such as ids or classifications.
-The structured outline will be surrounded by visual tags indicating where it
-starts and ends. The start will be a single line with <|HTML_OUTLINE_START|>
-and the end will be a single line with <|HTML_OUTLINE_END|>.
 
 #### Example
 
