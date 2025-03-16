@@ -19,9 +19,7 @@ The WordPress plugin within the playground instance will then postprocess the re
 # Process Chart
 ```mermaid
 graph TD
-    UserNavigatesWebsite[User Navigates to Website] --> CheckExtensionButtonVisibility{Chrome Extension Button Visible?};
-    CheckExtensionButtonVisibility -- Yes --> UserClicksConversionButton[User Clicks Conversion Button];
-    CheckExtensionButtonVisibility -- No --> UserNavigatesWebsite;
+    UserNavigatesWebsite[User Navigates to Website] --> UserClicksConversionButton{User Clicks Conversion Button};
     UserClicksConversionButton --> ShowLoadingButton[Show Loading Button];
     ShowLoadingButton --> CaptureVisualsAndProcessHTML{Capture Visuals and Process HTML};
     CaptureVisualsAndProcessHTML --> LaunchWordPressPlayground[Launch WordPress Playground Instance];
