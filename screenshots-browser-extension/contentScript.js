@@ -298,7 +298,7 @@
 					document.body.appendChild(previewImg);
 
 					// Clean up the blob URL when the image is removed
-					previewImg.onload = () => URL.revokeObjectURL(blobUrl);
+					// previewImg.onload = () => URL.revokeObjectURL(blobUrl);
 					if (blob) {
 						resolve(blob);
 					} else {
@@ -376,7 +376,7 @@
 							console.error('Error reading blob:', error);
 							sendResponse({ success: false, error: 'Failed to read blob' });
 						};
-						reader.readAsArrayBuffer(blob);
+						reader.readAsDataURL(blob);
 					} catch (error) {
 						console.error('Error processing final screenshot:', error);
 						sendResponse({ success: false, error: error.message });

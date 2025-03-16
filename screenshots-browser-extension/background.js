@@ -231,6 +231,11 @@ async function captureFullPage(tabId, width) {
 				continue;
 			}
 
+			console.log({
+				scrollY,
+				actualScrollY
+			})
+
 			// Draw the captured image onto the canvas in content script
 			const drawResult = await sendMessageToTab(tabId, {
 				action: 'DRAW_IMAGE',
@@ -276,13 +281,8 @@ async function captureFullPage(tabId, width) {
 		const timestamp = new Date().toISOString().replace(/:/g, '-');
 		const filename = `screenshot-${width}px-${timestamp}.png`;
 
-		// Use the array buffer directly with chrome.downloads.download
-		// Convert ArrayBuffer to base64 data URL
-		const base64Data = arrayBufferToBase64(finalResult.imageData);
-		const dataUrl = `data:image/png;base64,${base64Data}`;
-
 		await chrome.downloads.download({
-			url: dataUrl,
+			url: finalResult.imageData,
 			filename: filename,
 			saveAs: false,
 		});
