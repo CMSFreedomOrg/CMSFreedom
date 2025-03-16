@@ -2,6 +2,7 @@ const captureBtn = document.getElementById('captureBtn');
 const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
 const statusMessage = document.getElementById('statusMessage');
+const modal = document.getElementById('modal');
 
 // Store the target tab ID
 let targetTabId = null;
@@ -30,7 +31,10 @@ captureBtn.addEventListener('click', async () => {
     statusMessage.textContent = 'No valid tab to capture.';
     return;
   }
-  
+
+  const newWindow = window.open('migrate.html', '_blank', 'width=800,height=600');
+
+	return;
   progressContainer.style.display = 'block';
   statusMessage.textContent = 'Taking screenshots... don\'t touch the page.';
   captureBtn.disabled = true;
@@ -42,6 +46,7 @@ captureBtn.addEventListener('click', async () => {
     if (!tab) {
       statusMessage.textContent = 'Target tab no longer exists.';
       captureBtn.disabled = false;
+      newWindow.close();
       return;
     }
 
@@ -76,4 +81,5 @@ captureBtn.addEventListener('click', async () => {
   }
 
   captureBtn.disabled = false;
+  newWindow.close();
 });

@@ -8,7 +8,8 @@
 		"scripting", 
 		"tabs", 
 		"storage", 
-		"downloads"
+		"downloads",
+		"webNavigation"
 	],
 	"host_permissions": ["<all_urls>"],
 	"background": {
@@ -23,6 +24,12 @@
 			"matches": ["http://*/*", "https://*/*", "file://*/*"],
 			"js": ["contentScript.js"],
 			"run_at": "document_idle"
+		}
+	],
+	"web_accessible_resources": [
+		{
+			"resources": ["playground-client.js", "migrate.js", "migrate.html"],
+			"matches": ["<all_urls>"]
 		}
 	]
   }
