@@ -1,5 +1,5 @@
 const captureBtn = document.getElementById('captureBtn');
-const progressContainer = document.getElementById('progressContainer');
+const currentState = document.getElementById('currentState');
 const progressBar = document.getElementById('progressBar');
 const statusMessage = document.getElementById('statusMessage');
 const modal = document.getElementById('modal');
@@ -23,7 +23,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
 			statusMessage.textContent =
 				'Cannot capture this page. Please navigate to a regular web page.';
 		} else {
-			statusMessage.textContent = 'Ready to capture screenshots.';
+			statusMessage.textContent = '';
 		}
 	} else {
 		captureBtn.disabled = true;
@@ -44,7 +44,7 @@ captureBtn.addEventListener('click', async () => {
 		height: 600
 	});
 
-	progressContainer.style.display = 'block';
+	currentState.style.display = 'block';
 	statusMessage.textContent = 'Taking screenshots... don\'t touch the page.';
 	captureBtn.disabled = true;
 	progressBar.style.width = '0%';
