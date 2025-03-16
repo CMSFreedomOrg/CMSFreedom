@@ -184,35 +184,41 @@ async function captureFullPage(tabId, width) {
 		const steps = Math.ceil(totalHeight / scrollIncrement);
 		console.log({ steps });
 
+		// Remove the assumption of totalHeight and scroll until the bottom or 20,000 pixels
+		let totalScrolledHeight = 0;
+		const maxScrollHeight = 20000; // Upper bound for scrolling
+
 		// Initialize canvas in content script
 		const canvasInit = await sendMessageToTab(tabId, {
 			action: 'INIT_CANVAS',
 			width: totalWidth * devicePixelRatio,
-			height: totalHeight * devicePixelRatio,
+			height: maxScrollHeight * devicePixelRatio,
 		});
 
 		if (!canvasInit || !canvasInit.success) {
 			throw new Error('Failed to initialize canvas');
 		}
 
-		for (let step = 0; step < steps; step++) {
+		let step = 0;
+		while (totalScrolledHeight < maxScrollHeight) {
 			const scrollY = step * scrollIncrement;
 
 			// Make sure the target tab is still active
 			await activateTab(tabId);
 
 			// Scroll the page and wait for content to stabilize
-			console.log('before SCROLL TO', {scrollY, scrollIncrement});
 			const scrollResult = await sendMessageToTab(tabId, {
 				action: 'SCROLL_TO',
 				scrollY: scrollY,
 			});
 
-			const actualScrollY = scrollResult.actualScrollY;
 			if (!scrollResult || !scrollResult.success) {
 				console.error('Failed to scroll page');
-				continue;
+				break;
 			}
+
+			const actualScrollY = scrollResult.actualScrollY;
+			totalScrolledHeight = actualScrollY;
 
 			// Wait a bit after scrolling before capturing
 			await wait(50);
@@ -223,18 +229,13 @@ async function captureFullPage(tabId, width) {
 				dataUrl = await captureVisibleTabRateLimited();
 			} catch (error) {
 				console.error('Error capturing tab:', error);
-				continue;
+				break;
 			}
 
 			if (!dataUrl) {
 				console.error('No data URL returned from capture');
-				continue;
+				break;
 			}
-
-			console.log({
-				scrollY,
-				actualScrollY
-			})
 
 			// Draw the captured image onto the canvas in content script
 			const drawResult = await sendMessageToTab(tabId, {
@@ -246,29 +247,32 @@ async function captureFullPage(tabId, width) {
 
 			if (!drawResult || !drawResult.success) {
 				console.error('Failed to draw image on canvas');
-				continue;
+				break;
 			}
 
 			// Send progress
 			chrome.runtime.sendMessage({
 				type: 'PROGRESS_UPDATE',
 				completed: step + 1,
-				total: steps,
+				total: Math.ceil(maxScrollHeight / scrollIncrement),
 			});
 
 			if (step === 0) {
 				// Hide any elements that stick around on scrolling. We don't
 				// want them to be visible in every segment of the screenshot.
 				await sendMessageToTab(tabId, {
-					action: 'HIDE_STICKY_ELEMENTS'
+					action: 'HIDE_STICKY_ELEMENTS',
 				});
 			}
 
-			// Wait between captures to avoid running
-			// into the chrome security timeout.
-			if (step < steps - 1) {
-				await wait(50);
+			if (actualScrollY !== scrollY) {
+				break;
 			}
+
+			// Wait between captures to avoid running into the chrome security timeout.
+			await wait(50);
+
+			step++;
 		}
 
 		// Get the final screenshot from content script
