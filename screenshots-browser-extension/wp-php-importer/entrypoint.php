@@ -3,9 +3,7 @@
 require_once '/wordpress/wp-load.php';
 require_once __DIR__ . '/openai-prompt.php';
 
-$entry_url = 'https://wordpress-playground-cors-proxy.net/' . getenv('ENTRY_URL');
-var_dump($entry_url);
-$response = wp_remote_get($entry_url);
+$response = wp_remote_get(getenv('ENTRY_URL'));
 $html = $response['body'];
 
 $screenshots = glob('/tmp/screenshot-*.base64');
@@ -459,9 +457,10 @@ echo $response;
 $files = [];
 $current_file = null;
 $current_content = '';
-
 // Split the response into lines for processing
 $lines = explode("\n", $response);
+$in_file = false;
+
 foreach ($lines as $line) {
     // Check for file start marker
     if (preg_match('/<\|CREATE_FILE_START:(.*?)\|>/', $line, $start_match)) {
@@ -471,19 +470,27 @@ foreach ($lines as $line) {
             $current_content = '';
         }
         $current_file = $start_match[1];
+        $in_file = true;
+        continue;
     } 
     // Check for file end marker
-    elseif (preg_match('/<\|CREATE_FILE_END:(.*?)\|>/', $line, $end_match) && $current_file !== null) {
-        // Save the current file
-        $files[$current_file] = $current_content;
-        $current_file = null;
-        $current_content = '';
+    elseif (preg_match('/<\|CREATE_FILE_END:(.*?)\|>/', $line, $end_match)) {
+        if ($current_file !== null) {
+            // Save the current file
+            $files[$current_file] = $current_content;
+            $current_file = null;
+            $current_content = '';
+        }
+        $in_file = false;
+        continue;
     }
+    
     // If we're inside a file, add the line to the content
-    elseif ($current_file !== null) {
+    if ($in_file && $current_file !== null) {
         $current_content .= $line . "\n";
     }
 }
+
 
 // Handle case where the last file doesn't have a closing tag
 if ($current_file !== null) {

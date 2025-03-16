@@ -111,19 +111,29 @@ const client = await startPlaygroundWeb({
 					files: screeenshotFiles,
 				},
 			},
-			{
-				step: 'runPHPWithOptions',
-				options: {
-					code: '<?php require_once "/wordpress/wp-php-importer/entrypoint.php";',
-					env: {
-						ENTRY_URL: siteUrl,
-						OPENAI_API_KEY: '',
-					},
-				},
-			},
+			// {
+			// 	step: 'runPHPWithOptions',
+			// 	options: {
+			// 		code: '<?php require_once "/wordpress/wp-php-importer/entrypoint.php";',
+			// 		env: {
+			// 			ENTRY_URL: siteUrl,
+			// 			OPENAI_API_KEY: '',
+			// 		},
+			// 	},
+			// },
 		],
 	},
 });
 
-document.getElementById('modalContent').remove();
+const response = await client.run({
+	code: '<?php require_once "/wordpress/wp-php-importer/entrypoint.php";',
+	env: {
+		ENTRY_URL: siteUrl,
+		OPENAI_API_KEY: '',
+	},
+});
 
+console.log('Response', await response.text);
+
+document.getElementById('modalContent').remove();
+await client.goTo('/');

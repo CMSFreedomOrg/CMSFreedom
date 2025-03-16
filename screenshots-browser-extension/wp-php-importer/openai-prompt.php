@@ -111,7 +111,8 @@ function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): s
     }
 
 	if (!$stream) {
-		return $body;
+		$parsed = json_decode($body, true);
+		return $parsed['choices'][0]['message']['content'] ?? '';
 	}
 
     // Process the response
