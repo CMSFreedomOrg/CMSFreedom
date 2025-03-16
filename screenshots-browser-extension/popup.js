@@ -23,7 +23,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
 			statusMessage.textContent =
 				'Cannot capture this page. Please navigate to a regular web page.';
 		} else {
-			statusMessage.textContent = '';
+			statusMessage.textContent = 'Waiting to start capturing...';
 		}
 	} else {
 		captureBtn.disabled = true;
@@ -37,12 +37,12 @@ captureBtn.addEventListener('click', async () => {
 		return;
 	}
 
-	chrome.windows.create({
-		url: 'migrate.html',
-		type: 'popup',
-		width: 800,
-		height: 600
-	});
+	// chrome.windows.create({
+	// 	url: 'migrate.html',
+	// 	type: 'popup',
+	// 	width: 800,
+	// 	height: 600
+	// });
 
 	currentState.style.display = 'block';
 	statusMessage.textContent = 'Taking screenshots... don\'t touch the page.';
@@ -61,12 +61,11 @@ captureBtn.addEventListener('click', async () => {
 		// Listen for progress updates
 		chrome.runtime.onMessage.addListener(function listener(msg) {
 			if (msg.type === 'PROGRESS_UPDATE') {
-				const { completed, total } = msg;
-				const percentage = Math.round((completed / total) * 100);
-				progressBar.style.width = `${percentage}%`;
-				if (completed === total) {
-					chrome.runtime.onMessage.removeListener(listener);
-				}
+				const { currentY, totalY, totalScreenshots, currentScreenshot } = msg;
+				const percentage = Math.round((currentY / totalY) * 100);
+				document.getElementById('progressBar').style.width = `${percentage}%`;
+				document.getElementById('statusMessage')
+					.textContent = `Screenshot ${currentScreenshot}/${totalScreenshots} (${percentage}%) completed.`;
 			}
 		});
 
@@ -81,7 +80,7 @@ captureBtn.addEventListener('click', async () => {
 		} else if (response && response.status === 'error') {
 			statusMessage.textContent = `Error: ${response.message || 'Unknown error'}`;
 		} else {
-			statusMessage.textContent = 'Finished capturing, but with unknown status.';
+			// statusMessage.textContent = 'Finished capturing, but with unknown status.';
 		}
 	} catch (err) {
 		console.error('Error during capture:', err);
