@@ -326,20 +326,6 @@
 				const finalCanvas = trimCanvas();
 				
 				finalCanvas.toBlob((blob) => {
-					console.log({ blob });
-					// Render blob on the page for debugging/preview
-					const blobUrl = URL.createObjectURL(blob);
-					const previewImg = document.createElement('img');
-					previewImg.src = blobUrl;
-					previewImg.style.position = 'fixed';
-					previewImg.style.top = '10px';
-					previewImg.style.right = '10px';
-					previewImg.style.maxWidth = '300px';
-					previewImg.style.maxHeight = '300px';
-					previewImg.style.border = '2px solid red';
-					previewImg.style.zIndex = '9999';
-					document.body.appendChild(previewImg);
-
 					// Clean up the blob URL when the image is removed
 					// previewImg.onload = () => URL.revokeObjectURL(blobUrl);
 					if (blob) {

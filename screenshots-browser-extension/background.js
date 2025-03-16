@@ -7,8 +7,8 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 	if (message.type === 'START_CAPTURE') {
 		// Store the target tab ID
 		targetTabId = message.tabId;
-		// const SIZES = [375, 768, 1024];
-		const SIZES = [1024]; // Only use the largest size for testing
+		const dims = await sendMessageToTab(targetTabId, { action: 'GET_DIMENSIONS' });
+		const SIZES = [dims.totalWidth, 1024, 400];
 
 		try {
 			// We'll capture a full-page screenshot for each size in SIZES.
