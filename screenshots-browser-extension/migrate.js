@@ -40,7 +40,7 @@ const phpFilesToPutInPlayground = await processFileTree({
 			'theme.md': 'theme.md'
 		},
 		'entrypoint.php': 'entrypoint.php',
-		'html-inferer.php': 'html-inferer.php',
+		'html.inferer.php': 'html.inferer.php',
 		'openai-prompt.php': 'openai-prompt.php',
 		'prepare-md.php': 'prepare-md.php',
 		'prompts': {
