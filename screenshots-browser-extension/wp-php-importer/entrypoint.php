@@ -2,30 +2,92 @@
 
 require_once '/wordpress/wp-load.php';
 require_once __DIR__ . '/openai-prompt.php';
+require_once __DIR__ . '/html.inferer.php';
 
 $response = wp_remote_get(getenv('ENTRY_URL'));
 $html = $response['body'];
 
 $screenshots = glob('/tmp/screenshot-*.base64');
 
-$response = openAIPrompt(
+function run_llm( $systems, $users, $options = array() ) {
+	return openAIPrompt(
+		$systems,
+		$users,
+		array_merge_recursive(
+			[
+				'apiEndpoint' => getenv('OPENAI_API_ENDPOINT'),
+				'apiKey' => getenv('OPENAI_API_KEY'),
+				'payload' => [
+					'model' => getenv('OPENAI_API_MODEL')
+				]
+			],
+			$options
+		)
+	);
+}
+
+function prompt( $name ) {
+	return file_get_contents( __DIR__ . '/prompts/' . $name . '.txt' );
+}
+
+$html_for_context = HTML_Inferer::for_context( $html );
+$html_for_structure = HTML_Inferer::for_structure( $html );
+$html_outline = HTML_Inferer::build_outline( $html );
+
+// Extract main content
+$response = run_llm(
 	[
+		prompt( 'main-content' ),
 	],
+	[
+		"<|HTML_OUTLINE_START|>\n{$html_outline}\n<|HTML_OUTLINE_END|>\n",
+		"<|HTML_START|>\n{$html_for_structure}\n<|HTML_END|>\n",
+		prompt( 'selector.main-content' )
+	]
+);
+
+list( 'selector' => $main_content_selector, 'id' => $id ) = (array) json_decode( $response );
+
+$theme_only_html = HTML_Inferer::stamp_out( $html, $main_content_selector, 'layout-replacement::main-content', 'MAIN_CONTENT' );
+$main_content_html = HTML_Inferer::extract( $html, $main_content_selector );
+var_dump( [
+	'outline' => $html_outline,
+	'theme' => $theme_only_html,
+	'main' => $main_content_html,
+] );
+
+$response = run_llm(
+	[ prompt( 'main-content' ) ],
+	[
+		"<|HTML_OUTLINE_START|>\n{$html_outline}\n<|HTML_OUTLINE_END|>\n",
+		"<|HTML_START|>{$html_for_structure}<|HTML_END|>\n",
+		prompt( 'selector.post-title' )
+	]
+);
+
+list( 'selector' => $post_title_selector ) = (array) json_decode( $response );
+
+if ( ! empty( $post_title_selector ) ) {
+	$post_title = HTML_Inferer::extract( $html, $post_title_selector );
+} else {
+	$post_title = '';
+}
+
+$post_id = wp_insert_post( [
+	'post_content' => $main_content_html,
+	'post_title' => $post_title,
+	'post_status' => 'publish'
+] );
+
+$response = run_llm(
+	[ prompt( 'theme-generation-system' ) ],
 	array_merge(
-		[
-			file_get_contents( __DIR__ . '/prompts/theme-generation-system.txt' ),
-			'<|HTML_START|>',
-			$html,
-			'<|HTML_END|>',
-		],
+		[ "<|HTML_START|>\n{$html}\n<|HTML_END|>\n" ],
 		$screenshots,
 	),
 	[
-		'apiEndpoint' => getenv('OPENAI_API_ENDPOINT'),
-		'apiKey' => getenv('OPENAI_API_KEY'),
 		'stream' => false,
 		'payload' => [
-			'model' => getenv('OPENAI_API_MODEL'),
 			'response_format' => [
 				"type" => "json_schema",
 				"json_schema" => [
@@ -142,8 +204,21 @@ foreach ($files as $file_path => $file_content) {
     }
 
     // Write the file
+
+    // Push the content back in.
+    if ( str_contains( $file_content, 'layout-replacement::main-content' ) ) {
+        $file_content = str_replace(
+            '<div id="layout-replacement::main-content"></div>',
+            <<<BLOCKS
+            <!-- wp:post-title {"level":1} /-->
+            <!-- wp:post-content {"align":"full","layout":{"type":"constrained"}} /-->
+            BLOCKS,
+            $file_content
+        );
+    }
+
     file_put_contents($full_path, $file_content);
-	echo "Created file: " . $file_path . "\n";
+	echo "<|FILE_START:{$file_path}|>\n{$file_content}\n<|FILE_END|>\n";
 }
 
 echo "Theme files created in: " . $theme_dir;
@@ -160,3 +235,7 @@ if( wp_get_theme()->get_stylesheet() !== $theme_name ) {
 }
 
 echo "Theme activated: " . $theme_name . "\n";
+
+post_message_to_js(
+	"{\"goTo\": \"/?p={$post_id}\"}"
+);

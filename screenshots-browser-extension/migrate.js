@@ -151,7 +151,7 @@ const client = await startPlaygroundWeb({
 		login: true,
 		landingPage: '/wp-admin/',
 		preferredVersions: {
-			php: '8.0',
+			php: '8.4',
 			wp: 'latest',
 		},
 		features: {
@@ -183,6 +183,20 @@ const client = await startPlaygroundWeb({
 		],
 	},
 });
+
+
+client.onMessage(
+	(message) => {
+		console.log(message);
+
+		try {
+			const { goTo } = JSON.parse(message);
+			client.goTo(goTo);
+		} catch (e) {
+			// pass
+		}
+	}
+);
 
 const response = await client.run({
 	code: '<?php require_once "/wordpress/wp-php-importer/entrypoint.php";',

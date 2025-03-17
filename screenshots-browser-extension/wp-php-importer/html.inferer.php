@@ -25,6 +25,89 @@ class HTML_Inferer extends WP_HTML_Processor {
 		return $fragment;
 	}
 
+	public static function build_outline( $html ) {
+		$p = WP_HTML_Processor::create_full_parser( $html );
+		$o = '';
+		$depth = 0;
+
+		while ( $p->next_token() ) {
+			$tn = $p->get_token_name();
+			$tt = $p->get_token_type();
+			$ic = $p->is_tag_closer();
+			$ec = $p->expects_closer();
+
+			if ( '#tag' !== $tt ) {
+				continue;
+			}
+
+			$delta = $ic ? -1 : 1;
+
+			$structural_elements = [
+				'HTML',
+				'BASE',
+				'LINK',
+				'META',
+				'TITLE',
+				'BODY',
+				'ARTICLE',
+				'ASIDE',
+				'DIV',
+				'FOOTER',
+				'HEADER',
+				'H1',
+				'H2',
+				'H3',
+				'H4',
+				'H5',
+				'H6',
+				'HGROUP',
+				'MAIN',
+				'MENU',
+				'NAV',
+				'TABLE',
+				'SECTION',
+				'FORM',
+			];
+
+			if ( ! in_array( $tn, $structural_elements, true ) ) {
+				continue;
+			}
+
+			if ( $ic ) {
+				$depth--;
+				continue;
+			}
+
+			$data = $p->get_attribute_names_with_prefix( 'data-' );
+			$datas = array_map( function ( $n ) use ( $p ) {
+				$v = $p->get_attribute( $n );
+				if ( true === $v ) { return "[{$n}]"; }
+				$vs = str_replace( '"', "''", $v );
+				return "[{$n}=\"{$vs}\"]";
+			}, $data );
+			$datas = implode( '', $data );
+			$class = $p->get_attribute( 'class' );
+			$classes = is_string( $class )
+				? array_unique(preg_split("~[ \t\f\r\n]+~", $class, 0, PREG_SPLIT_NO_EMPTY))
+				: array();
+			$classes = implode( '', array_map( fn ( $c ) => ".{$c}", $classes ) );
+
+			$lang = $p->get_attribute( 'lang' );
+			$lang = is_string( $lang ) ? "[lang=\"{$lang}\"]" : '';
+			$id   = $p->get_attribute( 'id' );
+			$id   = is_string( $id ) ? "[id=\"{$id}\"]" : '';
+
+			$o .= str_repeat( '  ', $depth );
+			$o .= "{$tn}{$classes}{$lang}{$id}{$datas}\n";
+
+			if ( $ec ) {
+				$depth++;
+			}
+		}
+
+		return $o;
+	}
+
 	public static function for_structure( $html ) {
 		$p = WP_HTML_Processor::create_full_parser( $html );
 		$o = '';

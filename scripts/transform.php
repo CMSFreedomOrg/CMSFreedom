@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../prompts/html.inferer.php';
+require_once __DIR__ . '/../screenshots-browser-extension/wp-php-importer/html.inferer.php';
 
 function main() {
 	global $argv;
@@ -8,6 +8,10 @@ function main() {
 	$html = file_get_contents( 'php://stdin' );
 
 	switch ( $argv[1] ) {
+		case 'build.outline':
+			echo HTML_Inferer::build_outline( $html );
+			break;
+
 		case 'extract':
 			echo HTML_Inferer::extract( $html, $argv[2] );
 			break;
