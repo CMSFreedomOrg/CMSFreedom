@@ -54,3 +54,5 @@ ABSOLUTE RULES:
    part of the request answer.
  - These files MUST be valid WordPress block theme files, including
    the supporting JSON, HTML, and CSS files.
+ - The block template file should start with an appropriate HTML5 DOCTYPE "<!DOCTYPE html>"
+ - The block template file shouuld start with an appropriate HTML HEAD section with the UTF8 charset, e.g. <meta charset="utf-8">

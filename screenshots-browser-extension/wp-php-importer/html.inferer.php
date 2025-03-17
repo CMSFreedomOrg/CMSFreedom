@@ -15,6 +15,9 @@ class HTML_Inferer extends WP_HTML_Processor {
 		set_error_handler( function () { return true; } );
 		$dom = \DOM\HtmlDocument::createFromString( $html );
 		$node = $dom->querySelector( $selector );
+		if ( empty( $node ) ) {
+			return $html;
+		}
 		$div = $dom->createElement( 'div' );
 		$div->setAttribute( 'id', $id );
 		$div->innerHTML = $label;
@@ -78,7 +81,7 @@ class HTML_Inferer extends WP_HTML_Processor {
 				continue;
 			}
 
-			$data = $p->get_attribute_names_with_prefix( 'data-' );
+			$data = $p->get_attribute_names_with_prefix( 'data-' ) ?? array();
 			$datas = array_map( function ( $n ) use ( $p ) {
 				$v = $p->get_attribute( $n );
 				if ( true === $v ) { return "[{$n}]"; }

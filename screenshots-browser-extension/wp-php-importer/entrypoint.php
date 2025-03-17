@@ -60,10 +60,11 @@ $response = run_llm(
 	[ prompt( 'main-content' ) ],
 	[
 		"<|HTML_OUTLINE_START|>\n{$html_outline}\n<|HTML_OUTLINE_END|>\n",
-		"<|HTML_START|>{$html_for_structure}<|HTML_END|>\n",
+		"<|HTML_START|>{$html}<|HTML_END|>\n",
 		prompt( 'selector.post-title' )
 	]
 );
+var_dump( [ 'post_title_query' => $response ] );
 
 list( 'selector' => $post_title_selector ) = (array) json_decode( $response );
 
@@ -79,10 +80,14 @@ $post_id = wp_insert_post( [
 	'post_status' => 'publish'
 ] );
 
+if ( ! empty( $post_title_selector ) ) {
+	$theme_only_html = HTML_Inferer::stamp_out( $theme_only_html, $post_title_selector, '', '' );
+}
+
 $response = run_llm(
-	[ prompt( 'theme-generation-system' ) ],
+	[ prompt( 'theme-generation-system' ), prompt( 'block-theme' ) ],
 	array_merge(
-		[ "<|HTML_START|>\n{$html}\n<|HTML_END|>\n" ],
+		[ "<|HTML_START|>\n{$theme_only_html}\n<|HTML_END|>\n" ],
 		$screenshots,
 	),
 	[
