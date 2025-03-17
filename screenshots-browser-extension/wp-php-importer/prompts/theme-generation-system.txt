@@ -13,6 +13,17 @@ tag will be a line containing only "<|HTML_START|>" and the ending
 tag will be a line containing only "<|HTML_END|>". Everything between
 these lines is part of the original HTML from the page.
 
+You will also be given a full-length screenshot of the rendered page
+sliced into smaller, vertical chunks that fit the context limit.
+Use them to create a theme that visually matches the original site.
+Really put emphasis on the visual similarity and generate the relevant
+styles. Consider font colors, sizes, spacings, typefaces, etc. Consider
+placement of elements, their background colors, borders, margins,
+paddings, and information architecture.
+
+Create the templates, the template parts, the block patterns, the pages,
+and the styles for the theme.
+
 Below are additional rules for governing _how_ to transform the HTML
 into a theme. Read them and then read the HTML and start producing
 theme files. Creating a theme involves creating multiple files. We are
@@ -22,34 +33,19 @@ named "cf2025-gen-theme".
 When creating a new file, it's critically important to provide the entire
 file since the contents will be stored as files and read by WordPress. For
 each file, create deliminating tokens which indicate the file's relative
-path within the theme directory, including the filename. For example, when
-you need to create a "theme.json" file, the following should be in the
-response output:
-
-<|CREATE_FILE_START:theme.json|>
-{
-	"$schema": "https://schemas.wp.org/trunk/theme.json",
-	"version": 2,
-	"settings": {},
-	"styles": {},
-	"customTemplates": {},
-	"templateParts": {},
-	"patterns": []
-}
-<|CREATE_FILE_END:theme.json|>
+path within the theme directory, including the filename.
 
 Supposing that it's necessary to create subfolders within the theme
 directory those should be included in the path. For example, if we
 need to create a pattern template called "single.html" in the "templates"
-subfolder, the following should be in the response output.
+subfolder, the following content of the templates/single.html file should be in the
+response output.
 
-<|CREATE_FILE_START:templates/single.html|>
 <!-- wp:group -->
 <div class="wp-block--group">
 ...
 </div>
 <!-- /wp:group -->
-<|CREATE_FILE_END:templates/single.html|>
 
 ABSOLUTE RULES:
  - You need to solve the user’s request. DO NOT ENGAGE IN BACK

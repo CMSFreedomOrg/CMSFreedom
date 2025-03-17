@@ -189,6 +189,8 @@ const response = await client.run({
 	env: {
 		ENTRY_URL: siteUrl,
 		OPENAI_API_KEY: '',
+		OPENAI_API_ENDPOINT: 'https://api.openai.com/v1/chat/completions',
+		OPENAI_API_MODEL: 'o1-2024-12-17'
 	},
 });
 
