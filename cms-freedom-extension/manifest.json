@@ -1,5 +1,5 @@
 {
-	"name": "Full Page Screenshot Extension",
+	"name": "CMSFreedom",
 	"version": "1.0",
 	"manifest_version": 3,
 	"description": "Captures full-page screenshots by scrolling.",

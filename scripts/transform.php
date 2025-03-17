@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../screenshots-browser-extension/wp-php-importer/html.inferer.php';
+require_once __DIR__ . '/../cms-freedom-extension/wp-php-importer/html.inferer.php';
 
 function main() {
 	global $argv;

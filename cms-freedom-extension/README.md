@@ -1,4 +1,4 @@
-# CMS Freedom Screenshots Browser Extension
+# CMS Freedom Browser Extension
 
 A browser extension for capturing screenshots of websites at different device sizes.
 
@@ -30,4 +30,4 @@ A browser extension for capturing screenshots of websites at different device si
 - `manifest.json`: Extension configuration
 - `background.js`: Service worker for coordinating screenshot captures
 - `contentScript.js`: Script injected into web pages to capture screenshots
-- `popup.html/js`: Extension popup UI 
+- `popup.html/js`: Extension popup UI
