@@ -1,7 +1,5 @@
 <?php
 
-require_once '/Users/dmsnell/load-html-api.php';
-
 class HTML_Inferer extends WP_HTML_Processor {
 	public static function extract( $html, $selector ) {
 		set_error_handler( function () { return true; } );

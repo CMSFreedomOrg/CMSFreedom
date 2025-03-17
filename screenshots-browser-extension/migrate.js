@@ -36,8 +36,22 @@ async function processFileTree(fileTree, basePath = '') {
 // Define the file tree structure
 const phpFilesToPutInPlayground = await processFileTree({
 	'wp-php-importer': {
+		'context-prep': {
+			'theme.md': 'theme.md'
+		},
 		'entrypoint.php': 'entrypoint.php',
+		'html-inferer.php': 'html-inferer.php',
 		'openai-prompt.php': 'openai-prompt.php',
+		'prepare-md.php': 'prepare-md.php',
+		'prompts': {
+			'block-theme.txt': 'block-theme.txt',
+			'main-content.txt': 'main-content.txt',
+			'selector.main-content.txt': 'selector.main-content.txt',
+			'selector.next-item.txt': 'selector.next-item.txt',
+			'selector.parent-index.txt': 'selector.parent-index.txt',
+			'selector.post-title.txt': 'selector.post-title.txt',
+			'theme-generation-system.txt': 'theme-generation-system.txt',
+		},
 	},
 });
 
@@ -71,11 +85,11 @@ for (let i = 0; i < screenshots.length; i++) {
 	// Process screenshot: resize and slice into manageable chunks
 	const img = new Image();
 	img.src = screenshots[i];
-	
+
 	// Create a canvas to resize the image
 	const canvas = document.createElement('canvas');
 	const ctx = canvas.getContext('2d');
-	
+
 	// Wait for the image to load
 	await new Promise(resolve => {
 		img.onload = () => {
@@ -83,44 +97,44 @@ for (let i = 0; i < screenshots.length; i++) {
 			const maxWidth = 2000;
 			let newWidth = img.width;
 			let newHeight = img.height;
-			
+
 			if (newWidth > maxWidth) {
 				const ratio = maxWidth / newWidth;
 				newWidth = maxWidth;
 				newHeight = Math.floor(img.height * ratio);
 			}
-			
+
 			// Set canvas size for the resized image
 			canvas.width = newWidth;
 			canvas.height = newHeight;
-			
+
 			// Draw the resized image
 			ctx.drawImage(img, 0, 0, newWidth, newHeight);
-			
+
 			// Slice the image into chunks of max 768px height
 			const maxChunkHeight = 768;
 			const numChunks = Math.ceil(newHeight / maxChunkHeight);
-			
+
 			for (let j = 0; j < numChunks; j++) {
 				const chunkCanvas = document.createElement('canvas');
 				const chunkCtx = chunkCanvas.getContext('2d');
-				
+
 				const chunkHeight = Math.min(maxChunkHeight, newHeight - (j * maxChunkHeight));
 				chunkCanvas.width = newWidth;
 				chunkCanvas.height = chunkHeight;
-				
+
 				// Draw the slice to the chunk canvas
 				chunkCtx.drawImage(
-					canvas, 
+					canvas,
 					0, j * maxChunkHeight, newWidth, chunkHeight,
 					0, 0, newWidth, chunkHeight
 				);
-				
+
 				// Convert to base64 and store
 				const chunkDataUrl = chunkCanvas.toDataURL('image/png');
 				screeenshotFiles[`screenshot-${i}-chunk-${j}.base64`] = chunkDataUrl;
 			}
-			
+
 			resolve();
 		};
 	});

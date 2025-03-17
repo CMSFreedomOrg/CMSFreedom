@@ -2,7 +2,7 @@
 
 /**
  * Makes a request to OpenAI API with support for text and image inputs
- * 
+ *
  * @param array $inputs Array of strings or URLs/file paths
  * @param array $options Configuration options including apiEndpoint, apiKey, model, etc.
  * @return string The response text from the API
@@ -10,13 +10,13 @@
  */
 function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): string {
     // Validate required options
-    if (empty($options['apiEndpoint'])) {
+    if (!isset($options['apiEndpoint'])) {
         throw new Exception('API endpoint is required in options');
     }
-    if (empty($options['apiKey'])) {
+    if (!isset($options['apiKey'])) {
         throw new Exception('API key is required in options');
     }
-    if (empty($options['payload']['model'])) {
+    if (!isset($options['payload']['model'])) {
         throw new Exception('Model is required in options');
     }
 
@@ -108,7 +108,7 @@ function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): s
     // Process the response
     $resultText = '';
     $lines = explode("\n", $body);
-    
+
     foreach ($lines as $line) {
         if (empty($line) || str_starts_with($line, ':')) {
             continue;
@@ -123,7 +123,7 @@ function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): s
             try {
                 $parsed = json_decode($jsonData, true);
                 if (json_last_error() === JSON_ERROR_NONE) {
-                    $content = $parsed['choices'][0]['delta']['content'] ?? 
+                    $content = $parsed['choices'][0]['delta']['content'] ??
                              $parsed['choices'][0]['text'] ?? '';
                     $resultText .= $content;
                 }
@@ -158,4 +158,4 @@ function openAIPrompt(array $systemPrompt, array $userPrompt, array $options): s
 // }
 
 // // Uncomment to run the example
-// exampleImageAndTextPrompt(); 
+// exampleImageAndTextPrompt();

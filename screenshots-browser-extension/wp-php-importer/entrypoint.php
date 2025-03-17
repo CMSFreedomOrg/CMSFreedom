@@ -146,7 +146,7 @@ function parse_string_output($response) {
 			$current_file = $start_match[1];
 			$in_file = true;
 			continue;
-		} 
+		}
 		// Check for file end marker
 		elseif (preg_match('/<\|CREATE_FILE_END:(.*?)\|>/', $line, $end_match)) {
 			if ($current_file !== null) {
@@ -158,7 +158,7 @@ function parse_string_output($response) {
 			$in_file = false;
 			continue;
 		}
-		
+
 		// If we're inside a file, add the line to the content
 		if ($in_file && $current_file !== null) {
 			$current_content .= $line . "\n";
@@ -193,7 +193,7 @@ foreach ($files as $file_path => $file_content) {
     if (!file_exists($dir_path)) {
         mkdir($dir_path, 0755, true);
     }
-    
+
     // Write the file
     file_put_contents($full_path, $file_content);
 	echo "Created file: " . $file_path . "\n";
@@ -209,7 +209,7 @@ $theme_name = 'cf2025-gen-theme';
 switch_theme( $theme_name );
 
 if( wp_get_theme()->get_stylesheet() !== $theme_name ) {
-	throw new Exception( 'Theme ' . $theme_name . ' could not be activated.' );				
+	throw new Exception( 'Theme ' . $theme_name . ' could not be activated.' );
 }
 
 echo "Theme activated: " . $theme_name . "\n";

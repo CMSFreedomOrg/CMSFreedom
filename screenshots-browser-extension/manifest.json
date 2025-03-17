@@ -28,7 +28,17 @@
 				"migrate.html",
 				"wp-php-importer/entrypoint.php",
 				"wp-php-importer/openai-prompt.php",
-				"wp-php-importer/example-screenshot.php"
+				"wp-php-importer/example-screenshot.php",
+				"wp-php-importer/html-inferer.php",
+				"wp-php-importer/prepare-md.php",
+				"wp-php-importer/context-prep/theme.md",
+				"wp-php-importer/prompts/block-theme.txt",
+				"wp-php-importer/prompts/main-content.txt",
+				"wp-php-importer/prompts/selector.main-content.txt",
+				"wp-php-importer/prompts/selector.next-item.txt",
+				"wp-php-importer/prompts/selector.parent-index.txt",
+				"wp-php-importer/prompts/selector.post-title.txt",
+				"wp-php-importer/prompts/theme-generation-system.txt",
 			],
 			"matches": ["<all_urls>"]
 		}
